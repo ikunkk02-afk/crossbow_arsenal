@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "crossbow_arsenal",
+	"version": "${version}",
+	"name": "crossbow_arsenal",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/crossbow_arsenal/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.ikunkk02.crossbowarsenal.Crossbow_arsenal"
+		],
+		"client": [
+			"com.ikunkk02.crossbowarsenal.client.Crossbow_arsenalClient"
+		],
+		"fabric-datagen": [
+			"com.ikunkk02.crossbowarsenal.client.Crossbow_arsenalDataGenerator"
+		],
+		"modmenu": [
+			"com.ikunkk02.crossbowarsenal.client.config.CrossbowArsenalModMenu"
+		]
+	},
+	"mixins": [
+		"crossbow_arsenal.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*",
+		"cloth-config": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}
