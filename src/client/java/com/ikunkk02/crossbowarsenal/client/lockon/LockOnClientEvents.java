@@ -6,10 +6,12 @@ import com.ikunkk02.crossbowarsenal.network.LockTargetPacket;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.LivingEntity;
 
 public final class LockOnClientEvents {
-	private static int lastSentTargetId = -1;
+	private static int lastSentTargetId = Integer.MIN_VALUE;
+	private static ClientPlayerEntity lastPlayer;
 	private static LivingEntity currentTarget;
 	private static boolean holdingSightCrossbow;
 	private static boolean hasSentLockTargetPacket;
@@ -48,8 +50,8 @@ public final class LockOnClientEvents {
 	}
 
 	public static boolean isCurrentTargetSynced() {
-		return (currentTarget == null && lastSentTargetId == -1)
-				|| (currentTarget != null && currentTarget.getId() == lastSentTargetId);
+		return hasSentLockTargetPacket && ((currentTarget == null && lastSentTargetId == -1)
+				|| (currentTarget != null && currentTarget.getId() == lastSentTargetId));
 	}
 
 	private static void tick(MinecraftClient client) {
@@ -58,8 +60,15 @@ public final class LockOnClientEvents {
 			holdingSightCrossbow = false;
 			currentTargetScreenX = Double.NaN;
 			currentTargetScreenY = Double.NaN;
-			lastSentTargetId = -1;
+			lastSentTargetId = Integer.MIN_VALUE;
+			hasSentLockTargetPacket = false;
+			lastPlayer = null;
 			return;
+		}
+		if (client.player != lastPlayer) {
+			lastPlayer = client.player;
+			lastSentTargetId = Integer.MIN_VALUE;
+			hasSentLockTargetPacket = false;
 		}
 
 		CrossbowArsenalConfig config = CrossbowArsenalConfigManager.getConfig();
@@ -88,6 +97,10 @@ public final class LockOnClientEvents {
 
 	private static void sendIfChanged(int targetId) {
 		if (targetId != lastSentTargetId) {
+			hasSentLockTargetPacket = false;
+			if (!ClientPlayNetworking.canSend(LockTargetPacket.ID)) {
+				return;
+			}
 			ClientPlayNetworking.send(new LockTargetPacket(targetId));
 			lastSentTargetId = targetId;
 			hasSentLockTargetPacket = true;

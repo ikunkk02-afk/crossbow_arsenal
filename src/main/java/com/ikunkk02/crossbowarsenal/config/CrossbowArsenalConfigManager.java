@@ -2,6 +2,8 @@ package com.ikunkk02.crossbowarsenal.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.ikunkk02.crossbowarsenal.Crossbow_arsenal;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -26,7 +28,11 @@ public final class CrossbowArsenalConfigManager {
 	public static void load() {
 		if (Files.exists(CONFIG_PATH)) {
 			try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
-				CrossbowArsenalConfig loaded = GSON.fromJson(reader, CrossbowArsenalConfig.class);
+				JsonObject rawConfig = JsonParser.parseReader(reader).getAsJsonObject();
+				CrossbowArsenalConfig loaded = GSON.fromJson(rawConfig, CrossbowArsenalConfig.class);
+				if (loaded != null && !rawConfig.has("homingConfigVersion")) {
+					loaded.migrateLegacyHomingDefaults();
+				}
 				config = loaded == null ? new CrossbowArsenalConfig() : loaded;
 			} catch (IOException | RuntimeException exception) {
 				Crossbow_arsenal.LOGGER.warn("Failed to load Crossbow Arsenal config, using defaults", exception);

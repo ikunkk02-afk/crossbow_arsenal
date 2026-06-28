@@ -23,6 +23,12 @@
   "config.crossbow_arsenal.normalHomingStrength": "Normal Homing Strength",
   "config.crossbow_arsenal.undeadHomingStrength": "Undead Homing Strength",
   "config.crossbow_arsenal.bossHomingStrength": "Boss Homing Strength",
+  "config.crossbow_arsenal.homingGravityCompensation": "Homing Gravity Compensation",
+  "config.crossbow_arsenal.enableGuaranteedHomingHit": "Enable Guaranteed Homing Hit",
+  "config.crossbow_arsenal.terminalHomingRadius": "Terminal Homing Radius",
+  "config.crossbow_arsenal.terminalHomingStrength": "Terminal Homing Strength",
+  "config.crossbow_arsenal.homingHitboxExpansion": "Homing Hitbox Expansion",
+  "config.crossbow_arsenal.requireClearPathForGuaranteedHit": "Require Clear Path for Guaranteed Hit",
   "config.crossbow_arsenal.repeatingHomingMultiplier": "Repeating Homing Multiplier",
   "config.crossbow_arsenal.showLockOnHud": "Show Lock-on HUD",
   "config.crossbow_arsenal.showLockOnDebug": "Show Lock-on Debug"

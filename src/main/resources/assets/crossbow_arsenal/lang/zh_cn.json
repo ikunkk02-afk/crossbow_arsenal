@@ -23,6 +23,12 @@
   "config.crossbow_arsenal.normalHomingStrength": "\u666e\u901a\u76ee\u6807\u8ffd\u8e2a\u5f3a\u5ea6",
   "config.crossbow_arsenal.undeadHomingStrength": "\u4ea1\u7075\u76ee\u6807\u8ffd\u8e2a\u5f3a\u5ea6",
   "config.crossbow_arsenal.bossHomingStrength": "Boss \u8ffd\u8e2a\u5f3a\u5ea6",
+  "config.crossbow_arsenal.homingGravityCompensation": "\u8ffd\u8e2a\u91cd\u529b\u8865\u507f",
+  "config.crossbow_arsenal.enableGuaranteedHomingHit": "\u542f\u7528\u9501\u5b9a\u7bad\u5fc5\u4e2d\u8f85\u52a9",
+  "config.crossbow_arsenal.terminalHomingRadius": "\u672b\u7aef\u8ffd\u8e2a\u534a\u5f84",
+  "config.crossbow_arsenal.terminalHomingStrength": "\u672b\u7aef\u8ffd\u8e2a\u5f3a\u5ea6",
+  "config.crossbow_arsenal.homingHitboxExpansion": "\u8ffd\u8e2a\u547d\u4e2d\u76d2\u6269\u5c55",
+  "config.crossbow_arsenal.requireClearPathForGuaranteedHit": "\u5fc5\u4e2d\u8f85\u52a9\u9700\u8981\u65e0\u65b9\u5757\u963b\u6321",
   "config.crossbow_arsenal.repeatingHomingMultiplier": "\u8fde\u5f29\u8ffd\u8e2a\u5f3a\u5ea6\u500d\u7387",
   "config.crossbow_arsenal.showLockOnHud": "\u663e\u793a\u9501\u654c HUD",
   "config.crossbow_arsenal.showLockOnDebug": "\u663e\u793a\u9501\u654c\u8c03\u8bd5\u4fe1\u606f"

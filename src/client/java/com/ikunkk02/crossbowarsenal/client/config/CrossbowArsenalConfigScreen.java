@@ -92,26 +92,58 @@ public final class CrossbowArsenalConfigScreen {
 				.setSaveConsumer(value -> config.serverValidationFovDegrees = value)
 				.build());
 		lockOn.addEntry(entryBuilder.startIntSlider(Text.translatable("config.crossbow_arsenal.lockOnHomingTicks"), config.lockOnHomingTicks, 1, 200)
-				.setDefaultValue(60)
+				.setDefaultValue(120)
 				.setSaveConsumer(value -> config.lockOnHomingTicks = value)
 				.build());
 		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.normalHomingStrength"), config.normalHomingStrength)
-				.setDefaultValue(0.12D)
+				.setDefaultValue(0.55D)
 				.setMin(0.0D)
 				.setMax(1.0D)
 				.setSaveConsumer(value -> config.normalHomingStrength = value)
 				.build());
 		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.undeadHomingStrength"), config.undeadHomingStrength)
-				.setDefaultValue(0.16D)
+				.setDefaultValue(0.70D)
 				.setMin(0.0D)
 				.setMax(1.0D)
 				.setSaveConsumer(value -> config.undeadHomingStrength = value)
 				.build());
 		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.bossHomingStrength"), config.bossHomingStrength)
-				.setDefaultValue(0.08D)
+				.setDefaultValue(0.28D)
 				.setMin(0.0D)
 				.setMax(1.0D)
 				.setSaveConsumer(value -> config.bossHomingStrength = value)
+				.build());
+		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.homingGravityCompensation"), config.homingGravityCompensation)
+				.setDefaultValue(0.015D)
+				.setMin(0.0D)
+				.setMax(0.1D)
+				.setSaveConsumer(value -> config.homingGravityCompensation = value)
+				.build());
+		lockOn.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.enableGuaranteedHomingHit"), config.enableGuaranteedHomingHit)
+				.setDefaultValue(true)
+				.setSaveConsumer(value -> config.enableGuaranteedHomingHit = value)
+				.build());
+		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.terminalHomingRadius"), config.terminalHomingRadius)
+				.setDefaultValue(4.0D)
+				.setMin(0.1D)
+				.setMax(128.0D)
+				.setSaveConsumer(value -> config.terminalHomingRadius = value)
+				.build());
+		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.terminalHomingStrength"), config.terminalHomingStrength)
+				.setDefaultValue(0.9D)
+				.setMin(0.0D)
+				.setMax(1.0D)
+				.setSaveConsumer(value -> config.terminalHomingStrength = value)
+				.build());
+		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.homingHitboxExpansion"), config.homingHitboxExpansion)
+				.setDefaultValue(0.75D)
+				.setMin(0.0D)
+				.setMax(4.0D)
+				.setSaveConsumer(value -> config.homingHitboxExpansion = value)
+				.build());
+		lockOn.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.requireClearPathForGuaranteedHit"), config.requireClearPathForGuaranteedHit)
+				.setDefaultValue(true)
+				.setSaveConsumer(value -> config.requireClearPathForGuaranteedHit = value)
 				.build());
 		lockOn.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.repeatingHomingMultiplier"), config.repeatingHomingMultiplier)
 				.setDefaultValue(0.8D)

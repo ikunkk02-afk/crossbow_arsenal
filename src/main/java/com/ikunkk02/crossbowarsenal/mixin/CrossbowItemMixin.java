@@ -2,7 +2,6 @@ package com.ikunkk02.crossbowarsenal.mixin;
 
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
 import com.ikunkk02.crossbowarsenal.item.LockOnSightItemData;
-import com.ikunkk02.crossbowarsenal.lockon.LockOnManager;
 import com.ikunkk02.crossbowarsenal.repeating.RepeatingProjectileTags;
 import com.ikunkk02.crossbowarsenal.repeating.RepeatingCrossbowManager;
 import net.minecraft.entity.LivingEntity;
@@ -68,7 +67,6 @@ public class CrossbowItemMixin {
 				projectile.addCommandTag(RepeatingProjectileTags.REPEATING_ARROW);
 				projectile.setDamage(projectile.getDamage() * CrossbowArsenalConfigManager.getConfig().repeatingDamageMultiplier);
 			}
-			LockOnManager.attachHomingIfPresent(shooter, projectile, repeating);
 		}
 	}
 
