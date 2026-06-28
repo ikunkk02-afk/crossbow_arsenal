@@ -1,6 +1,7 @@
 package com.ikunkk02.crossbowarsenal.mixin;
 
 import com.ikunkk02.crossbowarsenal.lockon.HomingArrowUtil;
+import com.ikunkk02.crossbowarsenal.penetration.PenetrationArrowUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
@@ -38,10 +39,11 @@ public abstract class RangedWeaponItemMixin {
 			boolean critical,
 			LivingEntity target
 	) {
-		if ((Object) this instanceof CrossbowItem
-				&& shooter instanceof ServerPlayerEntity player
-				&& entity instanceof PersistentProjectileEntity projectile) {
-			HomingArrowUtil.applyHomingIfPossible(player, weaponStack, projectile);
+		if (shooter instanceof ServerPlayerEntity player && entity instanceof PersistentProjectileEntity projectile) {
+			if ((Object) this instanceof CrossbowItem) {
+				HomingArrowUtil.applyHomingIfPossible(player, weaponStack, projectile);
+			}
+			PenetrationArrowUtil.applyPenetrationIfPossible(player, projectile);
 		}
 		return spawnWorld.spawnEntity(entity);
 	}

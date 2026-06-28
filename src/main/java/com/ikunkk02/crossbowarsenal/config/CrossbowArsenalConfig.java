@@ -31,6 +31,20 @@ public class CrossbowArsenalConfig {
 	public double repeatingHomingMultiplier = 0.8D;
 	public boolean showLockOnHud = true;
 	public boolean showLockOnDebug = false;
+	public boolean enableGlassPenetration = true;
+	public double glassPenetrationDamageMultiplier = 0.9D;
+	public double glassPenetrationSpeedMultiplier = 0.92D;
+	public boolean glassPenetrationConsumesDurability = false;
+	public boolean fragileBlockPenetrationEnabled = true;
+	public double fragileBlockDamageMultiplier = 0.8D;
+	public double fragileBlockSpeedMultiplier = 0.85D;
+	public int maxFragileBlocksPenetrated = 3;
+	public boolean entityPenetrationEnabled = true;
+	public double entityPenetrationDamageDecay = 0.8D;
+	public int maxEntityPenetrations = 3;
+	public boolean lockOnArrowCanPenetrateGlass = true;
+	public boolean lockOnArrowCanPenetrateFragileBlocks = true;
+	public boolean showPenetrationDebug = false;
 
 	public int getShotsForLevel(int level) {
 		return switch (level) {
@@ -76,6 +90,13 @@ public class CrossbowArsenalConfig {
 		terminalHomingStrength = sanitizeRange(terminalHomingStrength, 0.9D, 0.0D, 1.0D);
 		homingHitboxExpansion = sanitizeRange(homingHitboxExpansion, 0.75D, 0.0D, 4.0D);
 		repeatingHomingMultiplier = clamp(repeatingHomingMultiplier, 0.0D, 1.0D);
+		glassPenetrationDamageMultiplier = clamp(glassPenetrationDamageMultiplier, 0.0D, 1.0D);
+		glassPenetrationSpeedMultiplier = clamp(glassPenetrationSpeedMultiplier, 0.0D, 1.0D);
+		fragileBlockDamageMultiplier = clamp(fragileBlockDamageMultiplier, 0.0D, 1.0D);
+		fragileBlockSpeedMultiplier = clamp(fragileBlockSpeedMultiplier, 0.0D, 1.0D);
+		maxFragileBlocksPenetrated = Math.max(0, Math.min(64, maxFragileBlocksPenetrated));
+		entityPenetrationDamageDecay = clamp(entityPenetrationDamageDecay, 0.0D, 1.0D);
+		maxEntityPenetrations = Math.max(1, Math.min(64, maxEntityPenetrations));
 	}
 
 	private static double clamp(double value, double min, double max) {
