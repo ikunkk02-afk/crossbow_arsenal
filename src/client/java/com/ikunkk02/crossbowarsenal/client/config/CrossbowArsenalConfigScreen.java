@@ -24,6 +24,7 @@ public final class CrossbowArsenalConfigScreen {
 		ConfigEntryBuilder entryBuilder = builder.entryBuilder();
 		ConfigCategory repeating = builder.getOrCreateCategory(Text.translatable("config.crossbow_arsenal.category.repeating"));
 		ConfigCategory lockOn = builder.getOrCreateCategory(Text.translatable("config.crossbow_arsenal.category.lock_on"));
+		ConfigCategory penetration = builder.getOrCreateCategory(Text.translatable("config.crossbow_arsenal.category.penetration"));
 
 		repeating.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.enableRepeatingCrossbow"), config.enableRepeatingCrossbow)
 				.setDefaultValue(true)
@@ -158,6 +159,72 @@ public final class CrossbowArsenalConfigScreen {
 		lockOn.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.showLockOnDebug"), config.showLockOnDebug)
 				.setDefaultValue(false)
 				.setSaveConsumer(value -> config.showLockOnDebug = value)
+				.build());
+		penetration.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.enableGlassPenetration"), config.enableGlassPenetration)
+				.setDefaultValue(true)
+				.setSaveConsumer(value -> config.enableGlassPenetration = value)
+				.build());
+		penetration.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.glassPenetrationDamageMultiplier"), config.glassPenetrationDamageMultiplier)
+				.setDefaultValue(0.9D)
+				.setMin(0.0D)
+				.setMax(1.0D)
+				.setSaveConsumer(value -> config.glassPenetrationDamageMultiplier = value)
+				.build());
+		penetration.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.glassPenetrationSpeedMultiplier"), config.glassPenetrationSpeedMultiplier)
+				.setDefaultValue(0.92D)
+				.setMin(0.0D)
+				.setMax(1.0D)
+				.setSaveConsumer(value -> config.glassPenetrationSpeedMultiplier = value)
+				.build());
+		penetration.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.glassPenetrationConsumesDurability"), config.glassPenetrationConsumesDurability)
+				.setDefaultValue(false)
+				.setSaveConsumer(value -> config.glassPenetrationConsumesDurability = value)
+				.build());
+		penetration.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.fragileBlockPenetrationEnabled"), config.fragileBlockPenetrationEnabled)
+				.setDefaultValue(true)
+				.setSaveConsumer(value -> config.fragileBlockPenetrationEnabled = value)
+				.build());
+		penetration.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.fragileBlockDamageMultiplier"), config.fragileBlockDamageMultiplier)
+				.setDefaultValue(0.8D)
+				.setMin(0.0D)
+				.setMax(1.0D)
+				.setSaveConsumer(value -> config.fragileBlockDamageMultiplier = value)
+				.build());
+		penetration.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.fragileBlockSpeedMultiplier"), config.fragileBlockSpeedMultiplier)
+				.setDefaultValue(0.85D)
+				.setMin(0.0D)
+				.setMax(1.0D)
+				.setSaveConsumer(value -> config.fragileBlockSpeedMultiplier = value)
+				.build());
+		penetration.addEntry(entryBuilder.startIntSlider(Text.translatable("config.crossbow_arsenal.maxFragileBlocksPenetrated"), config.maxFragileBlocksPenetrated, 0, 64)
+				.setDefaultValue(3)
+				.setSaveConsumer(value -> config.maxFragileBlocksPenetrated = value)
+				.build());
+		penetration.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.entityPenetrationEnabled"), config.entityPenetrationEnabled)
+				.setDefaultValue(true)
+				.setSaveConsumer(value -> config.entityPenetrationEnabled = value)
+				.build());
+		penetration.addEntry(entryBuilder.startDoubleField(Text.translatable("config.crossbow_arsenal.entityPenetrationDamageDecay"), config.entityPenetrationDamageDecay)
+				.setDefaultValue(0.8D)
+				.setMin(0.0D)
+				.setMax(1.0D)
+				.setSaveConsumer(value -> config.entityPenetrationDamageDecay = value)
+				.build());
+		penetration.addEntry(entryBuilder.startIntSlider(Text.translatable("config.crossbow_arsenal.maxEntityPenetrations"), config.maxEntityPenetrations, 1, 64)
+				.setDefaultValue(3)
+				.setSaveConsumer(value -> config.maxEntityPenetrations = value)
+				.build());
+		penetration.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.lockOnArrowCanPenetrateGlass"), config.lockOnArrowCanPenetrateGlass)
+				.setDefaultValue(true)
+				.setSaveConsumer(value -> config.lockOnArrowCanPenetrateGlass = value)
+				.build());
+		penetration.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.lockOnArrowCanPenetrateFragileBlocks"), config.lockOnArrowCanPenetrateFragileBlocks)
+				.setDefaultValue(true)
+				.setSaveConsumer(value -> config.lockOnArrowCanPenetrateFragileBlocks = value)
+				.build());
+		penetration.addEntry(entryBuilder.startBooleanToggle(Text.translatable("config.crossbow_arsenal.showPenetrationDebug"), config.showPenetrationDebug)
+				.setDefaultValue(false)
+				.setSaveConsumer(value -> config.showPenetrationDebug = value)
 				.build());
 
 		return builder.build();

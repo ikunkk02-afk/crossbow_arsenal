@@ -31,5 +31,20 @@
   "config.crossbow_arsenal.requireClearPathForGuaranteedHit": "\u5fc5\u4e2d\u8f85\u52a9\u9700\u8981\u65e0\u65b9\u5757\u963b\u6321",
   "config.crossbow_arsenal.repeatingHomingMultiplier": "\u8fde\u5f29\u8ffd\u8e2a\u5f3a\u5ea6\u500d\u7387",
   "config.crossbow_arsenal.showLockOnHud": "\u663e\u793a\u9501\u654c HUD",
-  "config.crossbow_arsenal.showLockOnDebug": "\u663e\u793a\u9501\u654c\u8c03\u8bd5\u4fe1\u606f"
+  "config.crossbow_arsenal.showLockOnDebug": "\u663e\u793a\u9501\u654c\u8c03\u8bd5\u4fe1\u606f",
+  "config.crossbow_arsenal.category.penetration": "\u7bad\u77e2\u7a7f\u900f",
+  "config.crossbow_arsenal.enableGlassPenetration": "\u542f\u7528\u73bb\u7483\u7a7f\u900f",
+  "config.crossbow_arsenal.glassPenetrationDamageMultiplier": "\u73bb\u7483\u7a7f\u900f\u4f24\u5bb3\u500d\u7387",
+  "config.crossbow_arsenal.glassPenetrationSpeedMultiplier": "\u73bb\u7483\u7a7f\u900f\u901f\u5ea6\u500d\u7387",
+  "config.crossbow_arsenal.glassPenetrationConsumesDurability": "\u73bb\u7483\u7a7f\u900f\u6d88\u8017\u7a7f\u900f\u989d\u5ea6",
+  "config.crossbow_arsenal.fragileBlockPenetrationEnabled": "\u542f\u7528\u8106\u5f31\u65b9\u5757\u7a7f\u900f",
+  "config.crossbow_arsenal.fragileBlockDamageMultiplier": "\u8106\u5f31\u65b9\u5757\u4f24\u5bb3\u500d\u7387",
+  "config.crossbow_arsenal.fragileBlockSpeedMultiplier": "\u8106\u5f31\u65b9\u5757\u901f\u5ea6\u500d\u7387",
+  "config.crossbow_arsenal.maxFragileBlocksPenetrated": "\u6700\u5927\u8106\u5f31\u65b9\u5757\u7a7f\u900f\u6570",
+  "config.crossbow_arsenal.entityPenetrationEnabled": "\u542f\u7528\u751f\u7269\u7a7f\u900f",
+  "config.crossbow_arsenal.entityPenetrationDamageDecay": "\u751f\u7269\u7a7f\u900f\u4f24\u5bb3\u8870\u51cf",
+  "config.crossbow_arsenal.maxEntityPenetrations": "\u6700\u5927\u751f\u7269\u547d\u4e2d\u6570",
+  "config.crossbow_arsenal.lockOnArrowCanPenetrateGlass": "\u9501\u654c\u7bad\u53ef\u7a7f\u900f\u73bb\u7483",
+  "config.crossbow_arsenal.lockOnArrowCanPenetrateFragileBlocks": "\u9501\u654c\u7bad\u53ef\u7a7f\u900f\u8106\u5f31\u65b9\u5757",
+  "config.crossbow_arsenal.showPenetrationDebug": "\u663e\u793a\u7a7f\u900f\u8c03\u8bd5\u4fe1\u606f"
 }

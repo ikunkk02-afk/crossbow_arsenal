@@ -88,9 +88,23 @@ tasks.register("runLockOnComponentTest", JavaExec) {
 	mainClass = "com.ikunkk02.crossbowarsenal.component.LockTargetComponentTest"
 }
 
+tasks.register("runPenetrationRulesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.penetration.PenetrationRulesTest"
+}
+
+tasks.register("runPenetrationResourcesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.penetration.PenetrationResourcesTest"
+}
+
 tasks.named("check") {
 	dependsOn tasks.named("runLockOnMathTest")
 	dependsOn tasks.named("runLockOnComponentTest")
+	dependsOn tasks.named("runPenetrationRulesTest")
+	dependsOn tasks.named("runPenetrationResourcesTest")
 }
 
 java {
