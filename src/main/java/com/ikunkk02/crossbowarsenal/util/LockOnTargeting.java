@@ -15,6 +15,8 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
 
 public final class LockOnTargeting {
+	public static final double SERVER_VALIDATION_FOV_DEGREES = 120.0D;
+
 	private LockOnTargeting() {
 	}
 
@@ -53,15 +55,21 @@ public final class LockOnTargeting {
 	}
 
 	public static String getServerTargetInvalidReason(PlayerEntity player, Entity entity, CrossbowArsenalConfig config) {
-		String baseReason = getBaseTargetInvalidReason(player, entity, config.lockOnMaxDistance, config.requireLineOfSight);
-		if (baseReason != null) {
-			return baseReason;
+		if (!(entity instanceof LivingEntity target)) {
+			return entity == null ? "target_not_found" : "not_living_entity";
 		}
-		LivingEntity target = (LivingEntity) entity;
-		if (config.enableFullScreenLockOn) {
-			return isWithinForwardFov(player, target, config.serverValidationFovDegrees) ? null : "outside_server_validation_fov_" + config.serverValidationFovDegrees;
+		if (entity == player) {
+			return "self_target";
 		}
-		return isWithinForwardAngle(player, target, config.lockOnAngleDegrees) ? null : "outside_lock_angle_" + config.lockOnAngleDegrees;
+		if (!target.isAlive() || target.isDead()) {
+			return "dead_target";
+		}
+		if (player.getEyePos().squaredDistanceTo(getTargetPoint(target)) > config.lockOnMaxDistance * config.lockOnMaxDistance) {
+			return "too_far";
+		}
+		return isWithinForwardFov(player, target, SERVER_VALIDATION_FOV_DEGREES)
+				? null
+				: "outside_server_validation_fov_" + SERVER_VALIDATION_FOV_DEGREES;
 	}
 
 	private static String getBaseTargetInvalidReason(PlayerEntity player, Entity entity, double maxDistance, boolean requireLineOfSight) {
@@ -118,8 +126,13 @@ public final class LockOnTargeting {
 		return target.getPos().add(0.0D, target.getHeight() * 0.55D, 0.0D);
 	}
 
-	public static Vec3d getHomingTargetPoint(LivingEntity target) {
-		return target.getEyePos();
+	public static Vec3d getHomingAimPoint(Entity target) {
+		Vec3d center = target.getBoundingBox().getCenter();
+		double height = target.getBoundingBox().getLengthY();
+		if (height <= 1.0D || target instanceof LivingEntity livingTarget && isBoss(livingTarget)) {
+			return center;
+		}
+		return center.add(0.0D, height * 0.15D, 0.0D);
 	}
 
 	public static int getPriority(LivingEntity target) {

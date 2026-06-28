@@ -26,6 +26,14 @@
 		],
 		"modmenu": [
 			"com.ikunkk02.crossbowarsenal.client.config.CrossbowArsenalModMenu"
+		],
+		"cardinal-components-entity": [
+			"com.ikunkk02.crossbowarsenal.component.ModComponents"
+		]
+	},
+	"custom": {
+		"cardinal-components": [
+			"crossbow_arsenal:lock_target"
 		]
 	},
 	"mixins": [
@@ -36,7 +44,9 @@
 		"minecraft": "~1.21.1",
 		"java": ">=21",
 		"fabric-api": "*",
-		"cloth-config": "*"
+		"cloth-config": "*",
+		"cardinal-components-base": ">=6.1.3",
+		"cardinal-components-entity": ">=6.1.3"
 	},
 	"suggests": {
 		"modmenu": "*"

@@ -15,7 +15,12 @@ import net.minecraft.entity.damage.DamageSources;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.RaycastContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -24,10 +29,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Mixin(PersistentProjectileEntity.class)
-public class PersistentProjectileEntityMixin implements HomingProjectile {
+public abstract class PersistentProjectileEntityMixin implements HomingProjectile {
 	@Unique
 	private static final String HOMING_TARGET_UUID_KEY = "CrossbowArsenalHomingTarget";
 	@Unique
@@ -36,9 +42,15 @@ public class PersistentProjectileEntityMixin implements HomingProjectile {
 	private static final String HOMING_STRENGTH_KEY = "CrossbowArsenalHomingStrength";
 	@Unique
 	private static final String HOMING_MAX_DISTANCE_KEY = "CrossbowArsenalHomingMaxDistance";
+	@Unique
+	private static final String HOMING_ORIGINAL_SPEED_KEY = "CrossbowArsenalHomingOriginalSpeed";
 
 	@Shadow
 	protected boolean inGround;
+	@Shadow
+	protected abstract boolean canHit(Entity entity);
+	@Shadow
+	protected abstract void onEntityHit(EntityHitResult entityHitResult);
 
 	@Unique
 	private UUID crossbow_arsenal$homingTargetUuid;
@@ -48,57 +60,118 @@ public class PersistentProjectileEntityMixin implements HomingProjectile {
 	private double crossbow_arsenal$homingStrength;
 	@Unique
 	private double crossbow_arsenal$homingMaxDistance;
+	@Unique
+	private double crossbow_arsenal$homingOriginalSpeed;
+	@Unique
+	private Vec3d crossbow_arsenal$previousArrowPosition;
 
 	@Override
-	public void crossbow_arsenal$setHomingTarget(UUID targetUuid, int homingTicks, double strength, double maxDistance) {
+	public void crossbow_arsenal$setHomingTarget(UUID targetUuid, int homingTicks, double strength, double maxDistance, double originalSpeed) {
 		crossbow_arsenal$homingTargetUuid = targetUuid;
 		crossbow_arsenal$homingTicks = Math.max(0, homingTicks);
 		crossbow_arsenal$homingStrength = LockOnMath.clampHomingStrength(strength);
 		crossbow_arsenal$homingMaxDistance = Math.max(1.0D, maxDistance);
-		crossbow_arsenal$debug("Homing target written projectile={} target={} ticks={} strength={} maxDistance={}", ((PersistentProjectileEntity) (Object) this).getUuid(), targetUuid, crossbow_arsenal$homingTicks, crossbow_arsenal$homingStrength, crossbow_arsenal$homingMaxDistance);
+		crossbow_arsenal$homingOriginalSpeed = Math.max(0.0D, originalSpeed);
+		crossbow_arsenal$previousArrowPosition = null;
+		PersistentProjectileEntity projectile = (PersistentProjectileEntity) (Object) this;
+		crossbow_arsenal$debug("Homing target written arrowUuid={} arrowEntityId={} targetUuid={} ticks={} strength={} maxDistance={} originalSpeed={}", projectile.getUuid(), projectile.getId(), targetUuid, crossbow_arsenal$homingTicks, crossbow_arsenal$homingStrength, crossbow_arsenal$homingMaxDistance, crossbow_arsenal$homingOriginalSpeed);
 	}
 
-	@Inject(method = "tick", at = @At("HEAD"))
+	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
 	private void crossbow_arsenal$tickHoming(CallbackInfo ci) {
 		PersistentProjectileEntity projectile = (PersistentProjectileEntity) (Object) this;
 		if (projectile.getWorld().isClient() || crossbow_arsenal$homingTargetUuid == null) {
 			return;
 		}
-		if (inGround || crossbow_arsenal$homingTicks <= 0 || !projectile.canHit() || !(projectile.getWorld() instanceof ServerWorld serverWorld)) {
-			crossbow_arsenal$clearHoming("inactive_projectile");
+		Vec3d currentVelocity = projectile.getVelocity();
+		if (inGround) {
+			crossbow_arsenal$logTick(projectile, "<missing>", Double.NaN, false, false, false, false, "arrow_in_ground");
+			crossbow_arsenal$clearHoming("arrow_in_ground");
+			return;
+		}
+		if (crossbow_arsenal$homingTicks <= 0) {
+			crossbow_arsenal$logTick(projectile, "<missing>", Double.NaN, false, false, false, false, "homing_ticks_exhausted");
+			crossbow_arsenal$clearHoming("homing_ticks_exhausted");
+			return;
+		}
+		if (!(projectile.getWorld() instanceof ServerWorld serverWorld)) {
+			crossbow_arsenal$logTick(projectile, "<missing>", Double.NaN, false, false, false, false, "not_server_world");
+			crossbow_arsenal$clearHoming("not_server_world");
 			return;
 		}
 
 		Entity entity = serverWorld.getEntity(crossbow_arsenal$homingTargetUuid);
 		if (!(entity instanceof LivingEntity target) || !target.isAlive()) {
+			crossbow_arsenal$logTick(projectile, entity == null ? "<missing>" : entity.getName().getString(), Double.NaN, false, false, false, false, "missing_or_dead_target");
 			crossbow_arsenal$clearHoming("missing_or_dead_target");
 			return;
 		}
+		String targetName = target.getName().getString();
+		if (!canHit(target) || !target.canBeHitByProjectile()) {
+			crossbow_arsenal$logTick(projectile, targetName, Double.NaN, false, false, false, false, "target_cannot_be_hit");
+			crossbow_arsenal$clearHoming("target_cannot_be_hit");
+			return;
+		}
 
-		Vec3d targetPoint = LockOnTargeting.getHomingTargetPoint(target);
-		if (projectile.getPos().squaredDistanceTo(targetPoint) > crossbow_arsenal$homingMaxDistance * crossbow_arsenal$homingMaxDistance) {
+		CrossbowArsenalConfig config = CrossbowArsenalConfigManager.getConfig();
+		Vec3d arrowPosition = projectile.getPos();
+		Vec3d previousArrowPosition = crossbow_arsenal$previousArrowPosition == null ? arrowPosition : crossbow_arsenal$previousArrowPosition;
+		crossbow_arsenal$previousArrowPosition = arrowPosition;
+		Vec3d aimPoint = LockOnTargeting.getHomingAimPoint(target);
+		double distance = arrowPosition.distanceTo(aimPoint);
+		double allowedDistance = crossbow_arsenal$homingMaxDistance + 8.0D;
+		if (distance > allowedDistance) {
+			crossbow_arsenal$logTick(projectile, targetName, distance, false, false, false, false, "target_too_far");
 			crossbow_arsenal$clearHoming("target_too_far");
 			return;
 		}
 
-		Vec3d velocity = projectile.getVelocity();
-		double speed = velocity.length();
-		Vec3d toTarget = targetPoint.subtract(projectile.getPos());
-		if (speed < 0.05D || toTarget.lengthSquared() <= 1.0E-6D) {
+		double speed = currentVelocity.length();
+		boolean terminalHomingActive = config.enableGuaranteedHomingHit && distance <= config.terminalHomingRadius;
+		Vec3d steeringAimPoint = terminalHomingActive
+				? aimPoint
+				: LockOnMath.predictAimPoint(arrowPosition, aimPoint, target.getVelocity(), speed, config.homingGravityCompensation);
+		Vec3d toTarget = steeringAimPoint.subtract(arrowPosition);
+		Vec3d desiredDirection = toTarget.normalize();
+		Vec3d adjustedVelocity = currentVelocity;
+		if (toTarget.lengthSquared() > 1.0E-6D) {
+			adjustedVelocity = terminalHomingActive
+					? LockOnMath.steerTerminalVelocity(currentVelocity, desiredDirection, config.terminalHomingStrength, 1.5D)
+					: LockOnMath.steerVelocity(currentVelocity, desiredDirection, crossbow_arsenal$homingStrength);
+			if (adjustedVelocity.lengthSquared() > 1.0E-6D) {
+				projectile.setVelocity(adjustedVelocity);
+				projectile.setYaw((float) (MathHelper.atan2(adjustedVelocity.x, adjustedVelocity.z) * 57.2957763671875D));
+				projectile.setPitch((float) (MathHelper.atan2(adjustedVelocity.y, adjustedVelocity.horizontalLength()) * 57.2957763671875D));
+				projectile.velocityModified = true;
+			}
+		}
+
+		Vec3d nextArrowPosition = arrowPosition.add(adjustedVelocity);
+		Box expandedHitbox = target.getBoundingBox().expand(config.homingHitboxExpansion);
+		Optional<Vec3d> hitPosition = LockOnMath.getBoxIntersection(expandedHitbox, previousArrowPosition, arrowPosition);
+		if (hitPosition.isEmpty()) {
+			hitPosition = LockOnMath.getBoxIntersection(expandedHitbox, arrowPosition, nextArrowPosition);
+		}
+		boolean expandedHitboxIntersected = hitPosition.isPresent();
+		boolean clearPathPassed = config.enableGuaranteedHomingHit
+				&& expandedHitboxIntersected
+				&& (!config.requireClearPathForGuaranteedHit || crossbow_arsenal$hasClearPath(projectile, arrowPosition, aimPoint));
+		if (config.enableGuaranteedHomingHit && expandedHitboxIntersected && clearPathPassed) {
+			crossbow_arsenal$clearHoming();
+			crossbow_arsenal$logTick(projectile, targetName, distance, terminalHomingActive, true, true, true, "forced_hit_triggered");
+			onEntityHit(new EntityHitResult(target, hitPosition.orElse(arrowPosition)));
+			ci.cancel();
+			return;
+		}
+
+		if (toTarget.lengthSquared() <= 1.0E-6D || adjustedVelocity.lengthSquared() <= 1.0E-6D) {
+			crossbow_arsenal$logTick(projectile, targetName, distance, terminalHomingActive, expandedHitboxIntersected, clearPathPassed, false, "invalid_velocity_or_target_vector");
 			crossbow_arsenal$clearHoming("invalid_velocity_or_target_vector");
 			return;
 		}
 
-		Vec3d desired = toTarget.normalize().multiply(speed);
-		Vec3d adjusted = velocity.lerp(desired, crossbow_arsenal$homingStrength);
-		if (adjusted.lengthSquared() <= 1.0E-6D) {
-			crossbow_arsenal$clearHoming("invalid_adjusted_velocity");
-			return;
-		}
-
-		projectile.setVelocity(adjusted.normalize().multiply(speed));
-		projectile.velocityModified = true;
 		crossbow_arsenal$homingTicks--;
+		crossbow_arsenal$logTick(projectile, targetName, distance, terminalHomingActive, expandedHitboxIntersected, clearPathPassed, false, terminalHomingActive ? "terminal_homing_applied" : "normal_homing_applied");
 	}
 
 	@Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
@@ -108,6 +181,7 @@ public class PersistentProjectileEntityMixin implements HomingProjectile {
 			nbt.putInt(HOMING_TICKS_KEY, crossbow_arsenal$homingTicks);
 			nbt.putDouble(HOMING_STRENGTH_KEY, crossbow_arsenal$homingStrength);
 			nbt.putDouble(HOMING_MAX_DISTANCE_KEY, crossbow_arsenal$homingMaxDistance);
+			nbt.putDouble(HOMING_ORIGINAL_SPEED_KEY, crossbow_arsenal$homingOriginalSpeed);
 		}
 	}
 
@@ -118,6 +192,7 @@ public class PersistentProjectileEntityMixin implements HomingProjectile {
 			crossbow_arsenal$homingTicks = nbt.getInt(HOMING_TICKS_KEY);
 			crossbow_arsenal$homingStrength = LockOnMath.clampHomingStrength(nbt.getDouble(HOMING_STRENGTH_KEY));
 			crossbow_arsenal$homingMaxDistance = Math.max(1.0D, nbt.getDouble(HOMING_MAX_DISTANCE_KEY));
+			crossbow_arsenal$homingOriginalSpeed = Math.max(0.0D, nbt.getDouble(HOMING_ORIGINAL_SPEED_KEY));
 		} else {
 			crossbow_arsenal$clearHoming();
 		}
@@ -129,6 +204,8 @@ public class PersistentProjectileEntityMixin implements HomingProjectile {
 		crossbow_arsenal$homingTicks = 0;
 		crossbow_arsenal$homingStrength = 0.0D;
 		crossbow_arsenal$homingMaxDistance = 0.0D;
+		crossbow_arsenal$homingOriginalSpeed = 0.0D;
+		crossbow_arsenal$previousArrowPosition = null;
 	}
 
 	@Unique
@@ -147,6 +224,27 @@ public class PersistentProjectileEntityMixin implements HomingProjectile {
 		if (config.showLockOnDebug) {
 			Crossbow_arsenal.LOGGER.info("[Lock-on] " + message, args);
 		}
+	}
+
+	@Unique
+	private boolean crossbow_arsenal$hasClearPath(PersistentProjectileEntity projectile, Vec3d start, Vec3d aimPoint) {
+		HitResult blockHit = projectile.getWorld().raycast(new RaycastContext(
+				start,
+				aimPoint,
+				RaycastContext.ShapeType.COLLIDER,
+				RaycastContext.FluidHandling.NONE,
+				projectile
+		));
+		return blockHit.getType() == HitResult.Type.MISS;
+	}
+
+	@Unique
+	private void crossbow_arsenal$logTick(PersistentProjectileEntity projectile, String targetName, double distance, boolean terminalHomingActive, boolean expandedHitboxIntersected, boolean clearPathPassed, boolean forcedHitTriggered, String result) {
+		crossbow_arsenal$debug(
+				"Homing tick arrowUuid={} arrowEntityId={} targetName={} distance={} terminalHomingActive={} expandedHitboxIntersected={} clearPathPassed={} forcedHitTriggered={} homingTicksLeft={} velocity={} result={}",
+				projectile.getUuid(), projectile.getId(), targetName, distance, terminalHomingActive, expandedHitboxIntersected,
+				clearPathPassed, forcedHitTriggered, crossbow_arsenal$homingTicks, projectile.getVelocity(), result
+		);
 	}
 
 	@Redirect(

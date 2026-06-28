@@ -1,6 +1,9 @@
 package com.ikunkk02.crossbowarsenal.config;
 
 public class CrossbowArsenalConfig {
+	private static final int CURRENT_HOMING_CONFIG_VERSION = 1;
+
+	int homingConfigVersion = CURRENT_HOMING_CONFIG_VERSION;
 	public boolean enableRepeatingCrossbow = true;
 	public int repeatingDelayTicks = 4;
 	public int level1Shots = 3;
@@ -15,10 +18,16 @@ public class CrossbowArsenalConfig {
 	public int lockOnScreenMargin = 20;
 	public boolean requireLineOfSight = true;
 	public double serverValidationFovDegrees = 120.0D;
-	public int lockOnHomingTicks = 60;
-	public double normalHomingStrength = 0.12D;
-	public double undeadHomingStrength = 0.16D;
-	public double bossHomingStrength = 0.08D;
+	public int lockOnHomingTicks = 120;
+	public double normalHomingStrength = 0.55D;
+	public double undeadHomingStrength = 0.70D;
+	public double bossHomingStrength = 0.28D;
+	public double homingGravityCompensation = 0.015D;
+	public boolean enableGuaranteedHomingHit = true;
+	public double terminalHomingRadius = 4.0D;
+	public double terminalHomingStrength = 0.9D;
+	public double homingHitboxExpansion = 0.75D;
+	public boolean requireClearPathForGuaranteedHit = true;
 	public double repeatingHomingMultiplier = 0.8D;
 	public boolean showLockOnHud = true;
 	public boolean showLockOnDebug = false;
@@ -29,6 +38,22 @@ public class CrossbowArsenalConfig {
 			case 2 -> level2Shots;
 			default -> level3Shots;
 		};
+	}
+
+	public void migrateLegacyHomingDefaults() {
+		if (lockOnHomingTicks == 60) {
+			lockOnHomingTicks = 120;
+		}
+		if (Double.compare(normalHomingStrength, 0.12D) == 0 || Double.compare(normalHomingStrength, 0.45D) == 0) {
+			normalHomingStrength = 0.55D;
+		}
+		if (Double.compare(undeadHomingStrength, 0.16D) == 0 || Double.compare(undeadHomingStrength, 0.55D) == 0) {
+			undeadHomingStrength = 0.70D;
+		}
+		if (Double.compare(bossHomingStrength, 0.08D) == 0 || Double.compare(bossHomingStrength, 0.22D) == 0) {
+			bossHomingStrength = 0.28D;
+		}
+		homingConfigVersion = CURRENT_HOMING_CONFIG_VERSION;
 	}
 
 	public void sanitize() {
@@ -46,6 +71,10 @@ public class CrossbowArsenalConfig {
 		normalHomingStrength = clamp(normalHomingStrength, 0.0D, 1.0D);
 		undeadHomingStrength = clamp(undeadHomingStrength, 0.0D, 1.0D);
 		bossHomingStrength = clamp(bossHomingStrength, 0.0D, 1.0D);
+		homingGravityCompensation = clamp(homingGravityCompensation, 0.0D, 0.1D);
+		terminalHomingRadius = sanitizeRange(terminalHomingRadius, 4.0D, 0.1D, 128.0D);
+		terminalHomingStrength = sanitizeRange(terminalHomingStrength, 0.9D, 0.0D, 1.0D);
+		homingHitboxExpansion = sanitizeRange(homingHitboxExpansion, 0.75D, 0.0D, 4.0D);
 		repeatingHomingMultiplier = clamp(repeatingHomingMultiplier, 0.0D, 1.0D);
 	}
 
@@ -58,5 +87,12 @@ public class CrossbowArsenalConfig {
 			return defaultValue;
 		}
 		return Math.min(value, max);
+	}
+
+	private static double sanitizeRange(double value, double defaultValue, double min, double max) {
+		if (!Double.isFinite(value)) {
+			return defaultValue;
+		}
+		return clamp(value, min, max);
 	}
 }
