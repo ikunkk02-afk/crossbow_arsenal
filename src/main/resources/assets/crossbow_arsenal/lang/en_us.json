@@ -31,5 +31,20 @@
   "config.crossbow_arsenal.requireClearPathForGuaranteedHit": "Require Clear Path for Guaranteed Hit",
   "config.crossbow_arsenal.repeatingHomingMultiplier": "Repeating Homing Multiplier",
   "config.crossbow_arsenal.showLockOnHud": "Show Lock-on HUD",
-  "config.crossbow_arsenal.showLockOnDebug": "Show Lock-on Debug"
+  "config.crossbow_arsenal.showLockOnDebug": "Show Lock-on Debug",
+  "config.crossbow_arsenal.category.penetration": "Arrow Penetration",
+  "config.crossbow_arsenal.enableGlassPenetration": "Enable Glass Penetration",
+  "config.crossbow_arsenal.glassPenetrationDamageMultiplier": "Glass Penetration Damage Multiplier",
+  "config.crossbow_arsenal.glassPenetrationSpeedMultiplier": "Glass Penetration Speed Multiplier",
+  "config.crossbow_arsenal.glassPenetrationConsumesDurability": "Glass Penetration Consumes Penetration Capacity",
+  "config.crossbow_arsenal.fragileBlockPenetrationEnabled": "Enable Fragile Block Penetration",
+  "config.crossbow_arsenal.fragileBlockDamageMultiplier": "Fragile Block Damage Multiplier",
+  "config.crossbow_arsenal.fragileBlockSpeedMultiplier": "Fragile Block Speed Multiplier",
+  "config.crossbow_arsenal.maxFragileBlocksPenetrated": "Max Fragile Blocks Penetrated",
+  "config.crossbow_arsenal.entityPenetrationEnabled": "Enable Entity Penetration",
+  "config.crossbow_arsenal.entityPenetrationDamageDecay": "Entity Penetration Damage Decay",
+  "config.crossbow_arsenal.maxEntityPenetrations": "Max Entity Targets",
+  "config.crossbow_arsenal.lockOnArrowCanPenetrateGlass": "Lock-on Arrows Can Penetrate Glass",
+  "config.crossbow_arsenal.lockOnArrowCanPenetrateFragileBlocks": "Lock-on Arrows Can Penetrate Fragile Blocks",
+  "config.crossbow_arsenal.showPenetrationDebug": "Show Penetration Debug"
 }
