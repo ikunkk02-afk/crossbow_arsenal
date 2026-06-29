@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:copper_ingot" },
+    { "item": "minecraft:flint" }
+  ],
+  "result": {
+    "id": "crossbow_arsenal:penetrating_arrow",
+    "count": 4
+  }
+}

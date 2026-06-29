@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "crossbow_arsenal:item/penetrating_arrow"
+  }
+}

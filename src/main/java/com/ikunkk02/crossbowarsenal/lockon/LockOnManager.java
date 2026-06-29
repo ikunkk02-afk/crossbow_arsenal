@@ -5,8 +5,11 @@ import com.ikunkk02.crossbowarsenal.component.LockTargetComponent;
 import com.ikunkk02.crossbowarsenal.component.ModComponents;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfig;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
+import com.ikunkk02.crossbowarsenal.network.LockTargetResultS2CPacket;
 import com.ikunkk02.crossbowarsenal.util.LockOnTargeting;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import java.util.UUID;
 
@@ -24,6 +27,7 @@ public final class LockOnManager {
 		if (targetEntityId < 0) {
 			debug(config, "LockTargetPacket player={} targetEntityId={} targetName=<none> validation=true failureReason=client_lost_target", player.getName().getString(), targetEntityId);
 			clearTarget(player, "client_lost_target");
+			sendResult(player, targetEntityId, true, false, "client_lost_target");
 			return;
 		}
 
@@ -43,7 +47,9 @@ public final class LockOnManager {
 
 		LockTargetComponent component = getTargetComponent(player);
 		component.setTarget(entity.getUuid(), targetEntityId, player.getWorld().getTime());
-		debug(config, "LockTargetPacket player={} targetEntityId={} targetName={} validation=true failureReason=none targetUuid={} lastLockTime={}", player.getName().getString(), targetEntityId, targetName, entity.getUuid(), component.getLastLockTime());
+		boolean throughWall = entity instanceof LivingEntity target && LockOnTargeting.isThroughWall(player, target);
+		debug(config, "LockTargetPacket player={} targetEntityId={} targetName={} validation=true failureReason=none targetUuid={} lastLockTime={} overpowered={} allowPlayers={} allowTargetThroughWalls={} allowHomingThroughWalls={} acceptedThroughWall={}", player.getName().getString(), targetEntityId, targetName, entity.getUuid(), component.getLastLockTime(), config.enableOverpoweredTargeting, config.allowTargetPlayers, config.allowTargetThroughWalls, config.allowHomingThroughWalls, throughWall);
+		sendResult(player, targetEntityId, true, throughWall, "none");
 	}
 
 	public static LockTargetComponent getTargetComponent(ServerPlayerEntity player) {
@@ -60,8 +66,13 @@ public final class LockOnManager {
 	}
 
 	private static void rejectTarget(ServerPlayerEntity player, CrossbowArsenalConfig config, int targetEntityId, String targetName, String reason) {
-		debug(config, "LockTargetPacket player={} targetEntityId={} targetName={} validation=false failureReason={}", player.getName().getString(), targetEntityId, targetName, reason);
+		debug(config, "LockTargetPacket player={} targetEntityId={} targetName={} validation=false failureReason={} overpowered={} allowPlayers={} allowTargetThroughWalls={} allowHomingThroughWalls={}", player.getName().getString(), targetEntityId, targetName, reason, config.enableOverpoweredTargeting, config.allowTargetPlayers, config.allowTargetThroughWalls, config.allowHomingThroughWalls);
 		clearTarget(player, reason);
+		sendResult(player, targetEntityId, false, false, reason);
+	}
+
+	private static void sendResult(ServerPlayerEntity player, int targetEntityId, boolean accepted, boolean throughWall, String reason) {
+		ServerPlayNetworking.send(player, new LockTargetResultS2CPacket(targetEntityId, accepted, throughWall, reason));
 	}
 
 	private static void debug(CrossbowArsenalConfig config, String message, Object... args) {

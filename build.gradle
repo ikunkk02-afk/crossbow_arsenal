@@ -88,6 +88,24 @@ tasks.register("runLockOnComponentTest", JavaExec) {
 	mainClass = "com.ikunkk02.crossbowarsenal.component.LockTargetComponentTest"
 }
 
+tasks.register("runOverpoweredTargetingPolicyTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.config.OverpoweredTargetingPolicyTest"
+}
+
+tasks.register("runOverpoweredTargetingRulesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.util.OverpoweredTargetingRulesTest"
+}
+
+tasks.register("runOverpoweredHomingRulesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.lockon.OverpoweredHomingRulesTest"
+}
+
 tasks.register("runPenetrationRulesTest", JavaExec) {
 	dependsOn tasks.named("testClasses")
 	classpath = sourceSets.test.runtimeClasspath
@@ -100,11 +118,66 @@ tasks.register("runPenetrationResourcesTest", JavaExec) {
 	mainClass = "com.ikunkk02.crossbowarsenal.penetration.PenetrationResourcesTest"
 }
 
+tasks.register("runSpecialArrowRulesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.arrow.SpecialArrowRulesTest"
+}
+
+tasks.register("runSpecialArrowResourcesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.arrow.SpecialArrowResourcesTest"
+}
+
+tasks.register("runStartupHudStateTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	dependsOn tasks.named("clientClasses")
+	classpath = sourceSets.test.runtimeClasspath + sourceSets.client.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.client.hud.StartupHudStateTest"
+}
+
+tasks.register("runStartupHudResourcesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	mainClass = "com.ikunkk02.crossbowarsenal.client.hud.StartupHudResourcesTest"
+	classpath = sourceSets.test.runtimeClasspath
+}
+
+tasks.register("runClientTargetingPolicyStateTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	dependsOn tasks.named("clientClasses")
+	classpath = sourceSets.test.runtimeClasspath + sourceSets.client.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.client.lockon.ClientTargetingPolicyStateTest"
+}
+
+tasks.register("runOverpoweredWarningStateTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	dependsOn tasks.named("clientClasses")
+	classpath = sourceSets.test.runtimeClasspath + sourceSets.client.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.client.hud.OverpoweredWarningStateTest"
+}
+
+tasks.register("runOverpoweredTargetingResourcesTest", JavaExec) {
+	dependsOn tasks.named("testClasses")
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "com.ikunkk02.crossbowarsenal.client.OverpoweredTargetingResourcesTest"
+}
+
 tasks.named("check") {
 	dependsOn tasks.named("runLockOnMathTest")
 	dependsOn tasks.named("runLockOnComponentTest")
+	dependsOn tasks.named("runOverpoweredTargetingPolicyTest")
+	dependsOn tasks.named("runOverpoweredTargetingRulesTest")
+	dependsOn tasks.named("runOverpoweredHomingRulesTest")
 	dependsOn tasks.named("runPenetrationRulesTest")
 	dependsOn tasks.named("runPenetrationResourcesTest")
+	dependsOn tasks.named("runSpecialArrowRulesTest")
+	dependsOn tasks.named("runSpecialArrowResourcesTest")
+	dependsOn tasks.named("runStartupHudStateTest")
+	dependsOn tasks.named("runStartupHudResourcesTest")
+	dependsOn tasks.named("runClientTargetingPolicyStateTest")
+	dependsOn tasks.named("runOverpoweredWarningStateTest")
+	dependsOn tasks.named("runOverpoweredTargetingResourcesTest")
 }
 
 java {

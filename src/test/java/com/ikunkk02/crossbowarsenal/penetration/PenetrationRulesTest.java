@@ -24,6 +24,13 @@ public final class PenetrationRulesTest {
 		Method exitPosition = rulesClass.getMethod("getExitPosition", Vec3d.class, Vec3d.class);
 		Method blockFirst = rulesClass.getMethod("isBlockBeforeEntity", Vec3d.class, Vec3d.class, Vec3d.class);
 		Method guaranteedHit = rulesClass.getMethod("canTriggerGuaranteedHit", boolean.class, boolean.class, boolean.class);
+		Method overpoweredActive = rulesClass.getMethod(
+				"canUseOverpoweredPenetration", boolean.class, boolean.class, boolean.class
+		);
+		Method overpoweredBlock = rulesClass.getMethod(
+				"canBreakOverpoweredBlock",
+				boolean.class, boolean.class, boolean.class, boolean.class, boolean.class, int.class, int.class
+		);
 
 		assertEquals(0, invokeInt(maxEntities, 0, 3), "ordinary arrows do not gain entity penetration");
 		assertEquals(2, invokeInt(maxEntities, 1, 3), "Piercing I can hit two targets");
@@ -50,6 +57,15 @@ public final class PenetrationRulesTest {
 		assertFalse((boolean) blockFirst.invoke(null, Vec3d.ZERO, new Vec3d(2.0D, 0.0D, 0.0D), new Vec3d(1.0D, 0.0D, 0.0D)), "nearer entity remains a vanilla entity hit");
 		assertTrue((boolean) guaranteedHit.invoke(null, true, true, true), "guaranteed hit requires an enabled, intersecting, clear path");
 		assertFalse((boolean) guaranteedHit.invoke(null, true, true, false), "a stone wall always blocks guaranteed hit");
+		assertFalse((boolean) overpoweredActive.invoke(null, false, true, true), "normal mode never gains overpowered penetration");
+		assertTrue((boolean) overpoweredActive.invoke(null, true, true, false), "overpowered penetrating arrows gain hard-block penetration");
+		assertTrue((boolean) overpoweredActive.invoke(null, true, false, true), "authorized through-wall homing uses synchronized block destruction");
+		assertFalse((boolean) overpoweredActive.invoke(null, true, false, false), "ordinary non-homing arrows remain unchanged");
+		assertTrue((boolean) overpoweredBlock.invoke(null, true, true, false, false, true, 7, 8), "eighth allowed block can be broken");
+		assertFalse((boolean) overpoweredBlock.invoke(null, true, true, false, false, true, 8, 8), "overpowered block cap is exclusive");
+		assertFalse((boolean) overpoweredBlock.invoke(null, true, true, true, false, true, 0, 8), "never-break tag is absolute");
+		assertFalse((boolean) overpoweredBlock.invoke(null, true, true, false, true, true, 0, 8), "block entities are absolute protection");
+		assertFalse((boolean) overpoweredBlock.invoke(null, true, true, false, false, false, 0, 8), "disabled stone or wood category remains protected");
 
 		Class<?> projectileInterface = requireClass("com.ikunkk02.crossbowarsenal.penetration.PenetratingProjectile");
 		projectileInterface.getMethod("crossbow_arsenal$initializePenetration", boolean.class, boolean.class, boolean.class, int.class, int.class);
@@ -84,6 +100,11 @@ public final class PenetrationRulesTest {
 		Method getBlockCount = stateClass.getMethod("getPenetratedBlockCount");
 		Method getEntityCount = stateClass.getMethod("getPenetratedEntityCount");
 		Method getMultiplier = stateClass.getMethod("getCurrentDamageMultiplier");
+		Method initializeOverpowered = stateClass.getMethod("initializeOverpowered", boolean.class, int.class);
+		Method canOverpowered = stateClass.getMethod("canPenetrateOverpowered");
+		Method recordOverpowered = stateClass.getMethod("recordOverpoweredBlockPenetration", double.class);
+		Method getOverpoweredCount = stateClass.getMethod("getOverpoweredBlockCount");
+		Method getMaxOverpowered = stateClass.getMethod("getMaxOverpoweredBlocks");
 		Method writeNbt = stateClass.getMethod("writeNbt", NbtCompound.class);
 		Method readNbt = stateClass.getMethod("readNbt", NbtCompound.class);
 
@@ -110,12 +131,23 @@ public final class PenetrationRulesTest {
 		assertTrue((boolean) hasHitEntity.invoke(state, second), "hit UUID is retained");
 		assertDoubleEquals(0.9D * 0.8D * 0.8D * 0.8D * 0.8D * 0.8D, (double) getMultiplier.invoke(state), "block and entity decay compound after each successful penetration");
 
+		initializeOverpowered.invoke(state, true, 8);
+		assertTrue((boolean) canOverpowered.invoke(state), "overpowered budget starts enabled");
+		for (int index = 0; index < 8; index++) {
+			recordOverpowered.invoke(state, 0.75D);
+		}
+		assertEquals(8, (int) getOverpoweredCount.invoke(state), "overpowered block count reaches configured cap");
+		assertEquals(8, (int) getMaxOverpowered.invoke(state), "overpowered block cap is retained");
+		assertFalse((boolean) canOverpowered.invoke(state), "overpowered penetration stops at configured cap");
+
 		NbtCompound nbt = new NbtCompound();
 		writeNbt.invoke(state, nbt);
 		Object restored = constructor.newInstance();
 		readNbt.invoke(restored, nbt);
-		assertEquals(3, (int) getBlockCount.invoke(restored), "block count survives NBT");
+		assertEquals(11, (int) getBlockCount.invoke(restored), "normal and overpowered block counts contribute to the total");
 		assertEquals(3, (int) getEntityCount.invoke(restored), "entity count survives NBT");
+		assertEquals(8, (int) getOverpoweredCount.invoke(restored), "overpowered block count survives NBT");
+		assertEquals(8, (int) getMaxOverpowered.invoke(restored), "overpowered block cap survives NBT");
 		assertTrue((boolean) hasHitEntity.invoke(restored, first), "UUID set survives NBT");
 		assertDoubleEquals((double) getMultiplier.invoke(state), (double) getMultiplier.invoke(restored), "damage multiplier survives NBT");
 
@@ -134,6 +166,11 @@ public final class PenetrationRulesTest {
 		assertBooleanField(config, "lockOnArrowCanPenetrateGlass", true);
 		assertBooleanField(config, "lockOnArrowCanPenetrateFragileBlocks", true);
 		assertBooleanField(config, "showPenetrationDebug", false);
+		assertBooleanField(config, "overpoweredPenetrationBreaksStone", true);
+		assertBooleanField(config, "overpoweredPenetrationBreaksWood", true);
+		assertIntField(config, "maxOverpoweredBlocksPenetrated", 8);
+		assertDoubleField(config, "overpoweredHardBlockSpeedMultiplier", 0.75D);
+		assertDoubleField(config, "overpoweredHardBlockDamageMultiplier", 0.75D);
 	}
 
 	private static Class<?> requireClass(String name) {

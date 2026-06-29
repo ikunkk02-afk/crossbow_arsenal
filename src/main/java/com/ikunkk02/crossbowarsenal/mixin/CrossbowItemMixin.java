@@ -1,6 +1,7 @@
 package com.ikunkk02.crossbowarsenal.mixin;
 
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
+import com.ikunkk02.crossbowarsenal.enchantment.ModEnchantments;
 import com.ikunkk02.crossbowarsenal.item.LockOnSightItemData;
 import com.ikunkk02.crossbowarsenal.repeating.RepeatingProjectileTags;
 import com.ikunkk02.crossbowarsenal.repeating.RepeatingCrossbowManager;
@@ -74,6 +75,9 @@ public class CrossbowItemMixin {
 	private void crossbow_arsenal$appendLockOnSightTooltip(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, TooltipType type, CallbackInfo ci) {
 		if (LockOnSightItemData.hasLockOnSight(stack)) {
 			tooltip.add(Text.translatable("tooltip.crossbow_arsenal.installed_lock_on_sight").formatted(Formatting.GRAY));
+		}
+		if (stack.getEnchantments().getEnchantments().stream().anyMatch(entry -> entry.matchesKey(ModEnchantments.EXPLOSIVE))) {
+			tooltip.add(Text.translatable("tooltip.crossbow_arsenal.explosive").formatted(Formatting.GRAY));
 		}
 	}
 }

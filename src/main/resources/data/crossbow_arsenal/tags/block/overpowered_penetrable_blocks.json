@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#crossbow_arsenal:penetrating_arrow_fragile_blocks",
+    "#crossbow_arsenal:penetrating_arrow_soft_blocks",
+    "#crossbow_arsenal:penetrating_arrow_wooden_blocks",
+    "#crossbow_arsenal:penetrating_arrow_stone_blocks"
+  ]
+}

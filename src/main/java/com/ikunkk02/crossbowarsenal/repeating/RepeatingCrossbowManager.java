@@ -168,7 +168,7 @@ public final class RepeatingCrossbowManager {
 		if (!crossbow.isOf(Items.CROSSBOW)) {
 			return 0;
 		}
-		if (ModEnchantments.hasAny(world, crossbow, Enchantments.MULTISHOT) || ModEnchantments.hasAny(world, crossbow, Enchantments.PIERCING)) {
+		if (ModEnchantments.hasAny(world, crossbow, Enchantments.MULTISHOT)) {
 			return 0;
 		}
 		return ModEnchantments.getRepeatingLevel(world, crossbow);

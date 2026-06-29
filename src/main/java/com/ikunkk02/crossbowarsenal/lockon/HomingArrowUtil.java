@@ -4,6 +4,7 @@ import com.ikunkk02.crossbowarsenal.Crossbow_arsenal;
 import com.ikunkk02.crossbowarsenal.component.LockTargetComponent;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfig;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
+import com.ikunkk02.crossbowarsenal.config.OverpoweredTargetingPolicy;
 import com.ikunkk02.crossbowarsenal.item.LockOnSightItemData;
 import com.ikunkk02.crossbowarsenal.repeating.RepeatingCrossbowManager;
 import com.ikunkk02.crossbowarsenal.util.LockOnMath;
@@ -69,13 +70,22 @@ public final class HomingArrowUtil {
 		}
 
 		LivingEntity target = (LivingEntity) targetEntity;
+		OverpoweredTargetingPolicy policy = OverpoweredTargetingPolicy.fromConfig(config);
 		boolean repeatingShot = RepeatingCrossbowManager.isFiring(player);
 		double strength = LockOnTargeting.getHomingStrength(target);
 		if (repeatingShot) {
 			strength *= config.repeatingHomingMultiplier;
 		}
 		strength = LockOnMath.clampHomingStrength(strength);
-		homingProjectile.crossbow_arsenal$setHomingTarget(targetUuid, config.lockOnHomingTicks, strength, config.lockOnMaxDistance, originalSpeed);
+		boolean homingThroughWallsAuthorized = policy.allowHomingThroughWalls();
+		homingProjectile.crossbow_arsenal$setHomingTarget(
+				targetUuid,
+				config.lockOnHomingTicks,
+				strength,
+				policy.targetMaxDistance(config.lockOnMaxDistance),
+				originalSpeed,
+				homingThroughWallsAuthorized
+		);
 
 		Vec3d aimPoint = LockOnTargeting.getHomingAimPoint(target);
 		Vec3d predictedAimPoint = LockOnMath.predictAimPoint(projectile.getPos(), aimPoint, target.getVelocity(), originalSpeed, config.homingGravityCompensation);
@@ -85,7 +95,7 @@ public final class HomingArrowUtil {
 		projectile.setVelocity(correctedVelocity);
 		updateRotation(projectile, correctedVelocity);
 		projectile.velocityModified = true;
-		logShot(config, player, projectile, true, component, targetName, true, true, "none", strength, originalSpeed);
+		logShot(config, player, projectile, true, component, targetName, true, true, homingThroughWallsAuthorized ? "none_through_wall_authorized" : "none", strength, originalSpeed);
 	}
 
 	private static void updateRotation(PersistentProjectileEntity projectile, Vec3d velocity) {

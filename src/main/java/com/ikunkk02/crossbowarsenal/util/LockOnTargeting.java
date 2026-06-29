@@ -2,6 +2,7 @@ package com.ikunkk02.crossbowarsenal.util;
 
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfig;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
+import com.ikunkk02.crossbowarsenal.config.OverpoweredTargetingPolicy;
 import com.ikunkk02.crossbowarsenal.item.LockOnSightItemData;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -47,7 +48,11 @@ public final class LockOnTargeting {
 	}
 
 	public static boolean isValidBaseTarget(PlayerEntity player, Entity entity, double maxDistance, boolean requireLineOfSight) {
-		return getBaseTargetInvalidReason(player, entity, maxDistance, requireLineOfSight) == null;
+		return getBaseTargetInvalidReason(player, entity, maxDistance, OverpoweredTargetingPolicy.disabled()) == null;
+	}
+
+	public static boolean isValidBaseTarget(PlayerEntity player, Entity entity, double maxDistance, OverpoweredTargetingPolicy policy) {
+		return getBaseTargetInvalidReason(player, entity, maxDistance, policy) == null;
 	}
 
 	public static boolean isValidServerTarget(PlayerEntity player, Entity entity, CrossbowArsenalConfig config) {
@@ -55,26 +60,20 @@ public final class LockOnTargeting {
 	}
 
 	public static String getServerTargetInvalidReason(PlayerEntity player, Entity entity, CrossbowArsenalConfig config) {
-		if (!(entity instanceof LivingEntity target)) {
-			return entity == null ? "target_not_found" : "not_living_entity";
+		OverpoweredTargetingPolicy policy = OverpoweredTargetingPolicy.fromConfig(config);
+		String baseReason = getBaseTargetInvalidReason(player, entity, policy.targetMaxDistance(config.lockOnMaxDistance), policy);
+		if (baseReason != null) {
+			return baseReason;
 		}
-		if (entity == player) {
-			return "self_target";
-		}
-		if (!target.isAlive() || target.isDead()) {
-			return "dead_target";
-		}
-		if (player.getEyePos().squaredDistanceTo(getTargetPoint(target)) > config.lockOnMaxDistance * config.lockOnMaxDistance) {
-			return "too_far";
-		}
-		return isWithinForwardFov(player, target, SERVER_VALIDATION_FOV_DEGREES)
+		LivingEntity target = (LivingEntity) entity;
+		return isWithinForwardFov(player, target, config.serverValidationFovDegrees)
 				? null
-				: "outside_server_validation_fov_" + SERVER_VALIDATION_FOV_DEGREES;
+				: "outside_server_validation_fov_" + config.serverValidationFovDegrees;
 	}
 
-	private static String getBaseTargetInvalidReason(PlayerEntity player, Entity entity, double maxDistance, boolean requireLineOfSight) {
+	private static String getBaseTargetInvalidReason(PlayerEntity player, Entity entity, double maxDistance, OverpoweredTargetingPolicy policy) {
 		if (!(entity instanceof LivingEntity target)) {
-			return "not_living_entity";
+			return entity == null ? "target_not_found" : "not_living_entity";
 		}
 		if (entity == player) {
 			return "self_target";
@@ -91,16 +90,26 @@ public final class LockOnTargeting {
 		if (target instanceof PlayerEntity targetPlayer && (targetPlayer.isCreative() || targetPlayer.isSpectator())) {
 			return "creative_or_spectator_player";
 		}
+		String restrictionReason = OverpoweredTargetingRules.getRestrictionReason(
+				policy,
+				target instanceof PlayerEntity,
+				target.isInvisibleTo(player),
+				isThroughWall(player, target)
+		);
+		if (restrictionReason != null) {
+			return restrictionReason;
+		}
 
 		Vec3d eye = player.getEyePos();
 		Vec3d targetPos = getTargetPoint(target);
 		if (eye.squaredDistanceTo(targetPos) > maxDistance * maxDistance) {
 			return "too_far";
 		}
-		if (requireLineOfSight && !player.canSee(target)) {
-			return "no_line_of_sight";
-		}
 		return null;
+	}
+
+	public static boolean isThroughWall(PlayerEntity player, LivingEntity target) {
+		return !player.canSee(target);
 	}
 
 	public static boolean isWithinForwardFov(PlayerEntity player, LivingEntity target, double fullFovDegrees) {
@@ -136,16 +145,12 @@ public final class LockOnTargeting {
 	}
 
 	public static int getPriority(LivingEntity target) {
-		if (isBoss(target)) {
-			return 0;
-		}
-		if (isUndead(target)) {
-			return 1;
-		}
-		if (target instanceof HostileEntity) {
-			return 2;
-		}
-		return 3;
+		return OverpoweredTargetingRules.getPriority(
+				target instanceof PlayerEntity,
+				isBoss(target),
+				isUndead(target),
+				target instanceof HostileEntity
+		);
 	}
 
 	public static boolean isBoss(LivingEntity target) {

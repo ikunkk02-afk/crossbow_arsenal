@@ -50,7 +50,10 @@ public final class LockOnClientEvents {
 	}
 
 	public static boolean isCurrentTargetSynced() {
-		return hasSentLockTargetPacket && ((currentTarget == null && lastSentTargetId == -1)
+		return hasSentLockTargetPacket
+				&& ClientTargetingPolicyState.wasLastTargetAccepted()
+				&& ClientTargetingPolicyState.getLastResultTargetId() == lastSentTargetId
+				&& ((currentTarget == null && lastSentTargetId == -1)
 				|| (currentTarget != null && currentTarget.getId() == lastSentTargetId));
 	}
 

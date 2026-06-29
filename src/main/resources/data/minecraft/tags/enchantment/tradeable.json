@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "crossbow_arsenal:repeating"
+    "crossbow_arsenal:repeating",
+    "crossbow_arsenal:explosive"
   ]
 }

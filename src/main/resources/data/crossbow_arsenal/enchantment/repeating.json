@@ -3,7 +3,7 @@
   "description": {
     "translate": "enchantment.crossbow_arsenal.repeating"
   },
-  "exclusive_set": "#minecraft:exclusive_set/crossbow",
+  "exclusive_set": "#crossbow_arsenal:exclusive_set/repeating",
   "max_cost": {
     "base": 50,
     "per_level_above_first": 0
@@ -18,5 +18,5 @@
     "offhand"
   ],
   "supported_items": "#minecraft:enchantable/crossbow",
-  "weight": 3
+  "weight": 5
 }

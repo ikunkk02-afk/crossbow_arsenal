@@ -1,6 +1,10 @@
 package com.ikunkk02.crossbowarsenal.penetration;
 
 import com.ikunkk02.crossbowarsenal.Crossbow_arsenal;
+import com.ikunkk02.crossbowarsenal.arrow.ArrowShotProjectile;
+import com.ikunkk02.crossbowarsenal.arrow.ArrowShotState;
+import com.ikunkk02.crossbowarsenal.arrow.ArrowType;
+import com.ikunkk02.crossbowarsenal.arrow.SpecialArrowRules;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfig;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
 import com.ikunkk02.crossbowarsenal.lockon.HomingProjectile;
@@ -20,33 +24,64 @@ public final class PenetrationArrowUtil {
 
 		int pierceLevel = Byte.toUnsignedInt(projectile.getPierceLevel());
 		boolean homing = projectile instanceof HomingProjectile homingProjectile && homingProjectile.crossbow_arsenal$isHoming();
-		boolean canGlass = PenetrationRules.canPenetrateGlass(
-				config.enableGlassPenetration,
-				homing,
-				config.lockOnArrowCanPenetrateGlass
+		ArrowShotState shotState = projectile instanceof ArrowShotProjectile shotProjectile
+				? shotProjectile.crossbow_arsenal$getArrowShotState() : null;
+		ArrowType arrowType = shotState == null ? ArrowType.NORMAL : shotState.getArrowType();
+		boolean specialPenetrating = arrowType == ArrowType.PENETRATING && config.enablePenetratingArrow;
+		boolean canGlass;
+		boolean canFragile;
+		boolean canSoft = false;
+		boolean canWooden = false;
+		boolean glassConsumes;
+		int maxFragile;
+		int maxEntities;
+		if (SpecialArrowRules.isExplosiveArrowActive(arrowType, config.enableExplosiveArrow)) {
+			canGlass = false;
+			canFragile = false;
+			glassConsumes = true;
+			maxFragile = 0;
+			maxEntities = 0;
+		} else if (specialPenetrating) {
+			canGlass = SpecialArrowRules.canPenetrateFragile(arrowType, true, config.penetratingArrowCanPenetrateFragileBlocks);
+			canFragile = canGlass;
+			canSoft = SpecialArrowRules.canPenetrateSoft(
+					arrowType, true, pierceLevel, config.penetratingArrowSoftBlockRequiresPiercingLevel
+			);
+			canWooden = SpecialArrowRules.canPenetrateWooden(
+					arrowType, true, pierceLevel, config.penetratingArrowWoodBlockRequiresPiercingLevel
+			);
+			glassConsumes = true;
+			maxFragile = SpecialArrowRules.getPenetratingArrowMaxBlocks(pierceLevel, config.maxFragileBlocksPenetrated);
+			maxEntities = config.entityPenetrationEnabled
+					? PenetrationRules.getMaxEntityTargets(pierceLevel, config.maxEntityPenetrations) : 0;
+		} else {
+			canGlass = PenetrationRules.canPenetrateGlass(
+					config.enableGlassPenetration, homing, config.lockOnArrowCanPenetrateGlass
+			);
+			canFragile = PenetrationRules.canPenetrateFragile(
+					config.fragileBlockPenetrationEnabled, pierceLevel, homing, config.lockOnArrowCanPenetrateFragileBlocks
+			);
+			glassConsumes = config.glassPenetrationConsumesDurability;
+			maxFragile = PenetrationRules.getMaxFragileBlocks(pierceLevel, homing, config.maxFragileBlocksPenetrated);
+			maxEntities = config.entityPenetrationEnabled
+					? PenetrationRules.getMaxEntityTargets(pierceLevel, config.maxEntityPenetrations) : 0;
+		}
+		penetratingProjectile.crossbow_arsenal$getPenetrationState().initialize(
+				canGlass, canFragile, canSoft, canWooden, glassConsumes, maxFragile, maxEntities
 		);
-		boolean canFragile = PenetrationRules.canPenetrateFragile(
-				config.fragileBlockPenetrationEnabled,
-				pierceLevel,
-				homing,
-				config.lockOnArrowCanPenetrateFragileBlocks
+		boolean throughWallHomingActive = homing && config.enableOverpoweredTargeting && config.allowHomingThroughWalls;
+		boolean overpoweredPenetration = PenetrationRules.canUseOverpoweredPenetration(
+				config.enableOverpoweredTargeting, specialPenetrating, throughWallHomingActive
 		);
-		int maxFragile = PenetrationRules.getMaxFragileBlocks(pierceLevel, homing, config.maxFragileBlocksPenetrated);
-		int maxEntities = config.entityPenetrationEnabled
-				? PenetrationRules.getMaxEntityTargets(pierceLevel, config.maxEntityPenetrations)
-				: 0;
-		penetratingProjectile.crossbow_arsenal$initializePenetration(
-				canGlass,
-				canFragile,
-				config.glassPenetrationConsumesDurability,
-				maxFragile,
-				maxEntities
+		penetratingProjectile.crossbow_arsenal$getPenetrationState().initializeOverpowered(
+				overpoweredPenetration, config.maxOverpoweredBlocksPenetrated
 		);
 		debug(
 				config,
-				"Arrow initialized player={} arrowUuid={} pierceLevel={} homing={} canGlass={} canFragile={} maxFragile={} maxEntities={} glassConsumesDurability={}",
-				player.getName().getString(), projectile.getUuid(), pierceLevel, homing, canGlass, canFragile,
-				maxFragile, maxEntities, config.glassPenetrationConsumesDurability
+				"Arrow initialized player={} arrowUuid={} arrowType={} pierceLevel={} homing={} canGlass={} canFragile={} canSoft={} canWooden={} maxFragile={} maxEntities={} glassConsumesDurability={} overpoweredPenetration={} maxOverpowered={}",
+				player.getName().getString(), projectile.getUuid(), arrowType.getId(), pierceLevel, homing,
+				canGlass, canFragile, canSoft, canWooden, maxFragile, maxEntities, glassConsumes,
+				overpoweredPenetration, config.maxOverpoweredBlocksPenetrated
 		);
 	}
 
