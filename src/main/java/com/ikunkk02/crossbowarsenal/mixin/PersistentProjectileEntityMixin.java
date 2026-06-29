@@ -1,10 +1,16 @@
 package com.ikunkk02.crossbowarsenal.mixin;
 
 import com.ikunkk02.crossbowarsenal.Crossbow_arsenal;
+import com.ikunkk02.crossbowarsenal.arrow.ArrowShotProjectile;
+import com.ikunkk02.crossbowarsenal.arrow.ArrowShotState;
+import com.ikunkk02.crossbowarsenal.arrow.ArrowType;
+import com.ikunkk02.crossbowarsenal.arrow.ExplosionArrowUtil;
+import com.ikunkk02.crossbowarsenal.arrow.SpecialArrowRules;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfig;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
 import com.ikunkk02.crossbowarsenal.damage.ModDamageTypes;
 import com.ikunkk02.crossbowarsenal.lockon.HomingProjectile;
+import com.ikunkk02.crossbowarsenal.lockon.OverpoweredHomingRules;
 import com.ikunkk02.crossbowarsenal.penetration.ModBlockTags;
 import com.ikunkk02.crossbowarsenal.penetration.PenetratingProjectile;
 import com.ikunkk02.crossbowarsenal.penetration.PenetrationRules;
@@ -43,7 +49,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Mixin(PersistentProjectileEntity.class)
-public abstract class PersistentProjectileEntityMixin implements HomingProjectile, PenetratingProjectile {
+public abstract class PersistentProjectileEntityMixin implements HomingProjectile, PenetratingProjectile, ArrowShotProjectile {
 	@Unique
 	private static final String HOMING_TARGET_UUID_KEY = "CrossbowArsenalHomingTarget";
 	@Unique
@@ -55,7 +61,11 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 	@Unique
 	private static final String HOMING_ORIGINAL_SPEED_KEY = "CrossbowArsenalHomingOriginalSpeed";
 	@Unique
+	private static final String HOMING_THROUGH_WALLS_KEY = "CrossbowArsenalHomingThroughWalls";
+	@Unique
 	private static final String PENETRATION_STATE_KEY = "CrossbowArsenalPenetration";
+	@Unique
+	private static final String ARROW_SHOT_STATE_KEY = "CrossbowArsenalArrowShot";
 
 	@Shadow
 	protected boolean inGround;
@@ -77,22 +87,27 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 	@Unique
 	private double crossbow_arsenal$homingOriginalSpeed;
 	@Unique
+	private boolean crossbow_arsenal$homingThroughWallsAuthorized;
+	@Unique
 	private Vec3d crossbow_arsenal$previousArrowPosition;
 	@Unique
 	private final PenetrationState crossbow_arsenal$penetrationState = new PenetrationState();
 	@Unique
+	private final ArrowShotState crossbow_arsenal$arrowShotState = new ArrowShotState();
+	@Unique
 	private boolean crossbow_arsenal$discardAfterEntityHit;
 
 	@Override
-	public void crossbow_arsenal$setHomingTarget(UUID targetUuid, int homingTicks, double strength, double maxDistance, double originalSpeed) {
+	public void crossbow_arsenal$setHomingTarget(UUID targetUuid, int homingTicks, double strength, double maxDistance, double originalSpeed, boolean homingThroughWallsAuthorized) {
 		crossbow_arsenal$homingTargetUuid = targetUuid;
 		crossbow_arsenal$homingTicks = Math.max(0, homingTicks);
 		crossbow_arsenal$homingStrength = LockOnMath.clampHomingStrength(strength);
 		crossbow_arsenal$homingMaxDistance = Math.max(1.0D, maxDistance);
 		crossbow_arsenal$homingOriginalSpeed = Math.max(0.0D, originalSpeed);
+		crossbow_arsenal$homingThroughWallsAuthorized = homingThroughWallsAuthorized;
 		crossbow_arsenal$previousArrowPosition = null;
 		PersistentProjectileEntity projectile = (PersistentProjectileEntity) (Object) this;
-		crossbow_arsenal$debug("Homing target written arrowUuid={} arrowEntityId={} targetUuid={} ticks={} strength={} maxDistance={} originalSpeed={}", projectile.getUuid(), projectile.getId(), targetUuid, crossbow_arsenal$homingTicks, crossbow_arsenal$homingStrength, crossbow_arsenal$homingMaxDistance, crossbow_arsenal$homingOriginalSpeed);
+		crossbow_arsenal$debug("Homing target written arrowUuid={} arrowEntityId={} targetUuid={} ticks={} strength={} maxDistance={} originalSpeed={} homingThroughWallsAuthorized={}", projectile.getUuid(), projectile.getId(), targetUuid, crossbow_arsenal$homingTicks, crossbow_arsenal$homingStrength, crossbow_arsenal$homingMaxDistance, crossbow_arsenal$homingOriginalSpeed, crossbow_arsenal$homingThroughWallsAuthorized);
 	}
 
 	@Override
@@ -117,6 +132,11 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 	@Override
 	public PenetrationState crossbow_arsenal$getPenetrationState() {
 		return crossbow_arsenal$penetrationState;
+	}
+
+	@Override
+	public ArrowShotState crossbow_arsenal$getArrowShotState() {
+		return crossbow_arsenal$arrowShotState;
 	}
 
 	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
@@ -171,6 +191,10 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 		}
 
 		CrossbowArsenalConfig config = CrossbowArsenalConfigManager.getConfig();
+		boolean throughWallHomingActive = OverpoweredHomingRules.isThroughWallHomingActive(
+				crossbow_arsenal$homingThroughWallsAuthorized,
+				config.enableOverpoweredTargeting && config.allowHomingThroughWalls
+		);
 		Vec3d arrowPosition = projectile.getPos();
 		Vec3d previousArrowPosition = crossbow_arsenal$previousArrowPosition == null ? arrowPosition : crossbow_arsenal$previousArrowPosition;
 		crossbow_arsenal$previousArrowPosition = arrowPosition;
@@ -205,7 +229,8 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 				projectile.velocityModified = true;
 			}
 		}
-		if (crossbow_arsenal$tryPenetrateBlock(projectile)) {
+		boolean blockHandled = crossbow_arsenal$tryPenetrateBlock(projectile, throughWallHomingActive);
+		if (blockHandled) {
 			crossbow_arsenal$homingTicks = Math.max(0, crossbow_arsenal$homingTicks - 1);
 			crossbow_arsenal$logTick(projectile, targetName, distance, terminalHomingActive, false, false, false, "penetrable_block_processed");
 			ci.cancel();
@@ -219,7 +244,10 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 			hitPosition = LockOnMath.getBoxIntersection(expandedHitbox, arrowPosition, nextArrowPosition);
 		}
 		boolean expandedHitboxIntersected = hitPosition.isPresent();
-		boolean clearPathPassed = expandedHitboxIntersected && crossbow_arsenal$hasClearPath(projectile, arrowPosition, aimPoint);
+		boolean clearPathPassed = expandedHitboxIntersected && (
+				OverpoweredHomingRules.canBypassGuaranteedHitClearPath(config.requireClearPathForGuaranteedHit, throughWallHomingActive)
+						|| crossbow_arsenal$hasClearPath(projectile, arrowPosition, aimPoint)
+		);
 		if (PenetrationRules.canTriggerGuaranteedHit(config.enableGuaranteedHomingHit, expandedHitboxIntersected, clearPathPassed)) {
 			crossbow_arsenal$clearHoming();
 			crossbow_arsenal$logTick(projectile, targetName, distance, terminalHomingActive, true, true, true, "forced_hit_triggered");
@@ -248,12 +276,18 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 			nbt.putInt(HOMING_TICKS_KEY, crossbow_arsenal$homingTicks);
 			nbt.putDouble(HOMING_STRENGTH_KEY, crossbow_arsenal$homingStrength);
 			nbt.putDouble(HOMING_MAX_DISTANCE_KEY, crossbow_arsenal$homingMaxDistance);
-			nbt.putDouble(HOMING_ORIGINAL_SPEED_KEY, crossbow_arsenal$homingOriginalSpeed);
+				nbt.putDouble(HOMING_ORIGINAL_SPEED_KEY, crossbow_arsenal$homingOriginalSpeed);
+			nbt.putBoolean(HOMING_THROUGH_WALLS_KEY, crossbow_arsenal$homingThroughWallsAuthorized);
 		}
 		if (crossbow_arsenal$penetrationState.isInitialized()) {
 			NbtCompound penetrationNbt = new NbtCompound();
 			crossbow_arsenal$penetrationState.writeNbt(penetrationNbt);
 			nbt.put(PENETRATION_STATE_KEY, penetrationNbt);
+		}
+		if (crossbow_arsenal$arrowShotState.isInitialized()) {
+			NbtCompound shotNbt = new NbtCompound();
+			crossbow_arsenal$arrowShotState.writeNbt(shotNbt);
+			nbt.put(ARROW_SHOT_STATE_KEY, shotNbt);
 		}
 	}
 
@@ -265,11 +299,15 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 			crossbow_arsenal$homingStrength = LockOnMath.clampHomingStrength(nbt.getDouble(HOMING_STRENGTH_KEY));
 			crossbow_arsenal$homingMaxDistance = Math.max(1.0D, nbt.getDouble(HOMING_MAX_DISTANCE_KEY));
 			crossbow_arsenal$homingOriginalSpeed = Math.max(0.0D, nbt.getDouble(HOMING_ORIGINAL_SPEED_KEY));
+			crossbow_arsenal$homingThroughWallsAuthorized = nbt.getBoolean(HOMING_THROUGH_WALLS_KEY);
 		} else {
 			crossbow_arsenal$clearHoming();
 		}
 		if (nbt.contains(PENETRATION_STATE_KEY, NbtElement.COMPOUND_TYPE)) {
 			crossbow_arsenal$penetrationState.readNbt(nbt.getCompound(PENETRATION_STATE_KEY));
+		}
+		if (nbt.contains(ARROW_SHOT_STATE_KEY, NbtElement.COMPOUND_TYPE)) {
+			crossbow_arsenal$arrowShotState.readNbt(nbt.getCompound(ARROW_SHOT_STATE_KEY));
 		}
 	}
 
@@ -280,6 +318,7 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 		crossbow_arsenal$homingStrength = 0.0D;
 		crossbow_arsenal$homingMaxDistance = 0.0D;
 		crossbow_arsenal$homingOriginalSpeed = 0.0D;
+		crossbow_arsenal$homingThroughWallsAuthorized = false;
 		crossbow_arsenal$previousArrowPosition = null;
 	}
 
@@ -315,6 +354,11 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 
 	@Unique
 	private boolean crossbow_arsenal$tryPenetrateBlock(PersistentProjectileEntity projectile) {
+		return crossbow_arsenal$tryPenetrateBlock(projectile, false);
+	}
+
+	@Unique
+	private boolean crossbow_arsenal$tryPenetrateBlock(PersistentProjectileEntity projectile, boolean throughWallHomingActive) {
 		if (inGround || !crossbow_arsenal$penetrationState.isInitialized()
 				|| !(projectile.getWorld() instanceof ServerWorld serverWorld)
 				|| !(projectile.getOwner() instanceof ServerPlayerEntity owner)) {
@@ -343,26 +387,74 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 			return false;
 		}
 
+		CrossbowArsenalConfig config = CrossbowArsenalConfigManager.getConfig();
+		if (!throughWallHomingActive && SpecialArrowRules.shouldExplodeBeforePenetration(
+				crossbow_arsenal$arrowShotState.getArrowType(),
+				crossbow_arsenal$arrowShotState.canExplode(),
+				config.explosiveStopsPenetration
+		)) {
+			return ExplosionArrowUtil.tryExplode(projectile, blockHit.getPos());
+		}
+
 		BlockState blockState = serverWorld.getBlockState(blockHit.getBlockPos());
 		boolean glass = blockState.isIn(ModBlockTags.ARROW_BREAKABLE_GLASS);
 		boolean fragile = blockState.isIn(ModBlockTags.ARROW_FRAGILE_BLOCKS);
-		boolean penetrable = glass && crossbow_arsenal$penetrationState.canPenetrateGlass()
-				|| fragile && crossbow_arsenal$penetrationState.canPenetrateFragile();
+		boolean specialFragile = blockState.isIn(ModBlockTags.PENETRATING_ARROW_FRAGILE_BLOCKS);
+		boolean soft = blockState.isIn(ModBlockTags.PENETRATING_ARROW_SOFT_BLOCKS);
+		boolean wooden = blockState.isIn(ModBlockTags.PENETRATING_ARROW_WOODEN_BLOCKS);
+		boolean stone = blockState.isIn(ModBlockTags.PENETRATING_ARROW_STONE_BLOCKS);
+		boolean overpoweredAllowed = blockState.isIn(ModBlockTags.OVERPOWERED_PENETRABLE_BLOCKS);
+		boolean hasBlockEntity = serverWorld.getBlockEntity(blockHit.getBlockPos()) != null;
+		boolean absoluteNeverBreak = blockState.isIn(ModBlockTags.OVERPOWERED_NEVER_BREAK_BLOCKS) || hasBlockEntity;
+		boolean neverPenetrate = blockState.isIn(ModBlockTags.PENETRATING_ARROW_NEVER_PENETRATE) || absoluteNeverBreak;
+		boolean specialPenetrating = crossbow_arsenal$arrowShotState.getArrowType() == ArrowType.PENETRATING
+				&& config.enablePenetratingArrow;
+		boolean normalPenetrable = !neverPenetrate && (specialPenetrating
+				? specialFragile && crossbow_arsenal$penetrationState.canPenetrateFragile()
+						|| soft && crossbow_arsenal$penetrationState.canPenetrateSoft()
+						|| wooden && crossbow_arsenal$penetrationState.canPenetrateWooden()
+				: glass && crossbow_arsenal$penetrationState.canPenetrateGlass()
+						|| fragile && crossbow_arsenal$penetrationState.canPenetrateFragile());
+		boolean overpoweredCategoryEnabled = (!stone || config.overpoweredPenetrationBreaksStone)
+				&& (!wooden || config.overpoweredPenetrationBreaksWood);
+		boolean overpoweredPenetrable = PenetrationRules.canBreakOverpoweredBlock(
+				crossbow_arsenal$penetrationState.isOverpoweredPenetrationEnabled(),
+				overpoweredAllowed,
+				blockState.isIn(ModBlockTags.OVERPOWERED_NEVER_BREAK_BLOCKS),
+				hasBlockEntity,
+				overpoweredCategoryEnabled,
+				crossbow_arsenal$penetrationState.getOverpoweredBlockCount(),
+				crossbow_arsenal$penetrationState.getMaxOverpoweredBlocks()
+		);
+		boolean useOverpoweredPenetration = !normalPenetrable && overpoweredPenetrable;
+		boolean penetrable = normalPenetrable || useOverpoweredPenetration;
 		String blockId = Registries.BLOCK.getId(blockState.getBlock()).toString();
 		if (!penetrable || !projectile.canModifyAt(serverWorld, blockHit.getBlockPos())) {
 			crossbow_arsenal$logPenetrationBlock(projectile, blockId, glass, fragile, penetrable, false, "blocked_or_no_permission");
 			return false;
 		}
 
-		CrossbowArsenalConfig config = CrossbowArsenalConfigManager.getConfig();
-		double damageMultiplier = glass ? config.glassPenetrationDamageMultiplier : config.fragileBlockDamageMultiplier;
-		double speedMultiplier = glass ? config.glassPenetrationSpeedMultiplier : config.fragileBlockSpeedMultiplier;
+		boolean hardBlock = stone || wooden;
+		double damageMultiplier = useOverpoweredPenetration && hardBlock
+				? config.overpoweredHardBlockDamageMultiplier
+				: specialPenetrating
+				? config.penetratingArrowDamageMultiplierPerBlock
+				: glass ? config.glassPenetrationDamageMultiplier : config.fragileBlockDamageMultiplier;
+		double speedMultiplier = useOverpoweredPenetration && hardBlock
+				? config.overpoweredHardBlockSpeedMultiplier
+				: specialPenetrating
+				? config.penetratingArrowSpeedMultiplierPerBlock
+				: glass ? config.glassPenetrationSpeedMultiplier : config.fragileBlockSpeedMultiplier;
 		if (!serverWorld.breakBlock(blockHit.getBlockPos(), false, owner, 512)) {
 			crossbow_arsenal$logPenetrationBlock(projectile, blockId, glass, fragile, true, false, "break_failed");
 			return false;
 		}
 
-		crossbow_arsenal$penetrationState.recordBlockPenetration(glass, damageMultiplier);
+		if (useOverpoweredPenetration) {
+			crossbow_arsenal$penetrationState.recordOverpoweredBlockPenetration(damageMultiplier);
+		} else {
+			crossbow_arsenal$penetrationState.recordBlockPenetration(glass, damageMultiplier);
+		}
 		projectile.setDamage(projectile.getDamage() * damageMultiplier);
 		Vec3d reducedVelocity = PenetrationRules.reduceVelocity(velocity, speedMultiplier);
 		Vec3d exitPosition = PenetrationRules.getExitPosition(blockHit.getPos(), velocity);
@@ -373,6 +465,13 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 		projectile.velocityModified = true;
 		crossbow_arsenal$weakenHoming(0.9D);
 		crossbow_arsenal$logPenetrationBlock(projectile, blockId, glass, fragile, true, true, "continued");
+		if (SpecialArrowRules.shouldExplodeAfterSuccessfulPenetration(
+				crossbow_arsenal$arrowShotState.getArrowType(),
+				crossbow_arsenal$arrowShotState.canExplode(),
+				config.explosiveStopsPenetration
+		)) {
+			ExplosionArrowUtil.tryExplode(projectile, exitPosition);
+		}
 		return true;
 	}
 
@@ -447,6 +546,27 @@ public abstract class PersistentProjectileEntityMixin implements HomingProjectil
 		if (!projectile.isRemoved()) {
 			projectile.discard();
 		}
+	}
+
+	@Inject(method = "onEntityHit", at = @At("RETURN"))
+	private void crossbow_arsenal$explodeAfterEntityHit(EntityHitResult entityHitResult, CallbackInfo ci) {
+		if (!crossbow_arsenal$arrowShotState.canExplode()) {
+			return;
+		}
+		PersistentProjectileEntity projectile = (PersistentProjectileEntity) (Object) this;
+		Vec3d explosionPosition = entityHitResult.getPos();
+		CrossbowArsenalConfig config = CrossbowArsenalConfigManager.getConfig();
+		if (SpecialArrowRules.shouldExplodeAfterSuccessfulPenetration(
+				crossbow_arsenal$arrowShotState.getArrowType(), true, config.explosiveStopsPenetration
+		)) {
+			explosionPosition = PenetrationRules.getExitPosition(explosionPosition, projectile.getVelocity());
+		}
+		ExplosionArrowUtil.tryExplode(projectile, explosionPosition);
+	}
+
+	@Inject(method = "onBlockHit", at = @At("RETURN"))
+	private void crossbow_arsenal$explodeAfterTerminalBlockHit(BlockHitResult blockHitResult, CallbackInfo ci) {
+		ExplosionArrowUtil.tryExplode((PersistentProjectileEntity) (Object) this, blockHitResult.getPos());
 	}
 
 	@Unique

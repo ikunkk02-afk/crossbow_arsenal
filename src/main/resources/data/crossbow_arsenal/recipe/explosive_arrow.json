@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:arrow" },
+    { "item": "minecraft:gunpowder" },
+    { "item": "minecraft:fire_charge" }
+  ],
+  "result": {
+    "id": "crossbow_arsenal:explosive_arrow",
+    "count": 4
+  }
+}

@@ -31,6 +31,23 @@ public class CrossbowArsenalConfig {
 	public double repeatingHomingMultiplier = 0.8D;
 	public boolean showLockOnHud = true;
 	public boolean showLockOnDebug = false;
+	public boolean enableOverpoweredTargeting = false;
+	public boolean allowTargetPlayers = false;
+	public boolean allowTargetThroughWalls = false;
+	public boolean allowHomingThroughWalls = false;
+	public boolean allowTargetInvisibleEntities = false;
+	public double overpoweredTargetMaxDistance = 64.0D;
+	public boolean overpoweredPenetrationBreaksStone = true;
+	public boolean overpoweredPenetrationBreaksWood = true;
+	public int maxOverpoweredBlocksPenetrated = 8;
+	public double overpoweredHardBlockSpeedMultiplier = 0.75D;
+	public double overpoweredHardBlockDamageMultiplier = 0.75D;
+	public boolean showOverpoweredWarning = true;
+	public boolean enableStartupHud = true;
+	public int startupHudDurationTicks = 30;
+	public double startupHudOpacity = 0.65D;
+	public boolean enableStartupSound = true;
+	public boolean startupHudReplayOnSwitch = true;
 	public boolean enableGlassPenetration = true;
 	public double glassPenetrationDamageMultiplier = 0.9D;
 	public double glassPenetrationSpeedMultiplier = 0.92D;
@@ -45,6 +62,24 @@ public class CrossbowArsenalConfig {
 	public boolean lockOnArrowCanPenetrateGlass = true;
 	public boolean lockOnArrowCanPenetrateFragileBlocks = true;
 	public boolean showPenetrationDebug = false;
+	public boolean enablePenetratingArrow = true;
+	public boolean enableExplosiveArrow = true;
+	public boolean penetratingArrowCanPenetrateFragileBlocks = true;
+	public int penetratingArrowSoftBlockRequiresPiercingLevel = 2;
+	public int penetratingArrowWoodBlockRequiresPiercingLevel = 3;
+	public double penetratingArrowDamageMultiplierPerBlock = 0.85D;
+	public double penetratingArrowSpeedMultiplierPerBlock = 0.9D;
+	public double explosiveArrowBasePower = 2.0D;
+	public double explosiveEnchantLevel1Power = 1.5D;
+	public double explosiveEnchantLevel2Power = 2.2D;
+	public double explosiveEnchantLevel3Power = 3.0D;
+	public double maxExplosionPower = 4.0D;
+	public boolean explosiveArrowBreakBlocks = false;
+	public boolean explosiveEnchantBreakBlocks = false;
+	public boolean explosiveArrowFire = false;
+	public double explosiveArrowKnockbackMultiplier = 1.0D;
+	public double explosiveArrowSelfDamageMultiplier = 0.35D;
+	public boolean explosiveStopsPenetration = true;
 
 	public int getShotsForLevel(int level) {
 		return switch (level) {
@@ -90,6 +125,12 @@ public class CrossbowArsenalConfig {
 		terminalHomingStrength = sanitizeRange(terminalHomingStrength, 0.9D, 0.0D, 1.0D);
 		homingHitboxExpansion = sanitizeRange(homingHitboxExpansion, 0.75D, 0.0D, 4.0D);
 		repeatingHomingMultiplier = clamp(repeatingHomingMultiplier, 0.0D, 1.0D);
+		overpoweredTargetMaxDistance = sanitizeRange(overpoweredTargetMaxDistance, 64.0D, 1.0D, 128.0D);
+		maxOverpoweredBlocksPenetrated = Math.max(0, Math.min(64, maxOverpoweredBlocksPenetrated));
+		overpoweredHardBlockSpeedMultiplier = clamp(overpoweredHardBlockSpeedMultiplier, 0.0D, 1.0D);
+		overpoweredHardBlockDamageMultiplier = clamp(overpoweredHardBlockDamageMultiplier, 0.0D, 1.0D);
+		startupHudDurationTicks = Math.max(1, Math.min(600, startupHudDurationTicks));
+		startupHudOpacity = sanitizeRange(startupHudOpacity, 0.65D, 0.0D, 1.0D);
 		glassPenetrationDamageMultiplier = clamp(glassPenetrationDamageMultiplier, 0.0D, 1.0D);
 		glassPenetrationSpeedMultiplier = clamp(glassPenetrationSpeedMultiplier, 0.0D, 1.0D);
 		fragileBlockDamageMultiplier = clamp(fragileBlockDamageMultiplier, 0.0D, 1.0D);
@@ -97,6 +138,17 @@ public class CrossbowArsenalConfig {
 		maxFragileBlocksPenetrated = Math.max(0, Math.min(64, maxFragileBlocksPenetrated));
 		entityPenetrationDamageDecay = clamp(entityPenetrationDamageDecay, 0.0D, 1.0D);
 		maxEntityPenetrations = Math.max(1, Math.min(64, maxEntityPenetrations));
+		penetratingArrowSoftBlockRequiresPiercingLevel = Math.max(0, Math.min(255, penetratingArrowSoftBlockRequiresPiercingLevel));
+		penetratingArrowWoodBlockRequiresPiercingLevel = Math.max(0, Math.min(255, penetratingArrowWoodBlockRequiresPiercingLevel));
+		penetratingArrowDamageMultiplierPerBlock = clamp(penetratingArrowDamageMultiplierPerBlock, 0.0D, 1.0D);
+		penetratingArrowSpeedMultiplierPerBlock = clamp(penetratingArrowSpeedMultiplierPerBlock, 0.0D, 1.0D);
+		explosiveArrowBasePower = sanitizeRange(explosiveArrowBasePower, 2.0D, 0.0D, 16.0D);
+		explosiveEnchantLevel1Power = sanitizeRange(explosiveEnchantLevel1Power, 1.5D, 0.0D, 16.0D);
+		explosiveEnchantLevel2Power = sanitizeRange(explosiveEnchantLevel2Power, 2.2D, 0.0D, 16.0D);
+		explosiveEnchantLevel3Power = sanitizeRange(explosiveEnchantLevel3Power, 3.0D, 0.0D, 16.0D);
+		maxExplosionPower = sanitizeRange(maxExplosionPower, 4.0D, 0.0D, 16.0D);
+		explosiveArrowKnockbackMultiplier = sanitizeRange(explosiveArrowKnockbackMultiplier, 1.0D, 0.0D, 10.0D);
+		explosiveArrowSelfDamageMultiplier = sanitizeRange(explosiveArrowSelfDamageMultiplier, 0.35D, 0.0D, 10.0D);
 	}
 
 	private static double clamp(double value, double min, double max) {

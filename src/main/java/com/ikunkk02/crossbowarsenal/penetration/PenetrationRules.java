@@ -53,4 +53,31 @@ public final class PenetrationRules {
 	public static boolean canTriggerGuaranteedHit(boolean enabled, boolean expandedHitboxIntersected, boolean clearPath) {
 		return enabled && expandedHitboxIntersected && clearPath;
 	}
+
+	public static boolean canUseOverpoweredPenetration(
+			boolean overpoweredEnabled,
+			boolean specialPenetratingArrow,
+			boolean throughWallHomingActive
+	) {
+		return overpoweredEnabled && (specialPenetratingArrow || throughWallHomingActive);
+	}
+
+	public static boolean canBreakOverpoweredBlock(
+			boolean overpoweredActive,
+			boolean allowedBlock,
+			boolean neverBreakBlock,
+			boolean hasBlockEntity,
+			boolean categoryEnabled,
+			int penetratedCount,
+			int configuredMax
+	) {
+		return overpoweredActive
+				&& allowedBlock
+				&& !neverBreakBlock
+				&& !hasBlockEntity
+				&& categoryEnabled
+				&& configuredMax > 0
+				&& penetratedCount >= 0
+				&& penetratedCount < configuredMax;
+	}
 }

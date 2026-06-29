@@ -38,6 +38,45 @@ public final class PenetrationResourcesTest {
 			assertNotContains(fragile, forbidden, "fragile tag");
 		}
 
+		String wooden = readRequired(BLOCK_TAGS.resolve("penetrating_arrow_wooden_blocks.json"));
+		for (String required : new String[]{
+			"#minecraft:logs", "#minecraft:planks", "#minecraft:wooden_fences",
+			"#minecraft:wooden_doors", "#minecraft:wooden_trapdoors"
+		}) {
+			assertContains(wooden, required, "wooden penetration tag");
+		}
+
+		String stone = readRequired(BLOCK_TAGS.resolve("penetrating_arrow_stone_blocks.json"));
+		for (String required : new String[]{
+			"#minecraft:base_stone_overworld", "minecraft:cobblestone", "minecraft:stone_bricks",
+			"minecraft:cobbled_deepslate", "minecraft:deepslate_bricks", "minecraft:deepslate_tiles"
+		}) {
+			assertContains(stone, required, "stone penetration tag");
+		}
+		for (String forbidden : new String[]{"minecraft:obsidian", "minecraft:diamond_ore", "minecraft:iron_ore"}) {
+			assertNotContains(stone, forbidden, "stone penetration tag");
+		}
+
+		String overpowered = readRequired(BLOCK_TAGS.resolve("overpowered_penetrable_blocks.json"));
+		for (String required : new String[]{
+			"#crossbow_arsenal:penetrating_arrow_fragile_blocks",
+			"#crossbow_arsenal:penetrating_arrow_soft_blocks",
+			"#crossbow_arsenal:penetrating_arrow_wooden_blocks",
+			"#crossbow_arsenal:penetrating_arrow_stone_blocks"
+		}) {
+			assertContains(overpowered, required, "overpowered penetrable tag");
+		}
+
+		String neverBreak = readRequired(BLOCK_TAGS.resolve("overpowered_never_break_blocks.json"));
+		for (String required : new String[]{
+			"minecraft:bedrock", "minecraft:obsidian", "minecraft:reinforced_deepslate",
+			"minecraft:barrier", "minecraft:command_block", "minecraft:structure_block",
+			"minecraft:spawner", "minecraft:chest", "minecraft:barrel", "minecraft:furnace",
+			"minecraft:crafting_table", "#minecraft:shulker_boxes"
+		}) {
+			assertContains(neverBreak, required, "overpowered never-break tag");
+		}
+
 		String english = readRequired(Path.of("src", "main", "resources", "assets", "crossbow_arsenal", "lang", "en_us.json"));
 		String chinese = readRequired(Path.of("src", "main", "resources", "assets", "crossbow_arsenal", "lang", "zh_cn.json"));
 		for (String requiredKey : new String[]{
@@ -55,11 +94,20 @@ public final class PenetrationResourcesTest {
 			"config.crossbow_arsenal.maxEntityPenetrations",
 			"config.crossbow_arsenal.lockOnArrowCanPenetrateGlass",
 			"config.crossbow_arsenal.lockOnArrowCanPenetrateFragileBlocks",
-			"config.crossbow_arsenal.showPenetrationDebug"
+			"config.crossbow_arsenal.showPenetrationDebug",
+			"config.crossbow_arsenal.overpoweredPenetrationBreaksStone",
+			"config.crossbow_arsenal.overpoweredPenetrationBreaksWood",
+			"config.crossbow_arsenal.maxOverpoweredBlocksPenetrated",
+			"config.crossbow_arsenal.overpoweredHardBlockSpeedMultiplier",
+			"config.crossbow_arsenal.overpoweredHardBlockDamageMultiplier"
 		}) {
 			assertContains(english, requiredKey, "English language file");
 			assertContains(chinese, requiredKey, "Chinese language file");
 		}
+
+		String projectileMixin = readRequired(Path.of("src", "main", "java", "com", "ikunkk02", "crossbowarsenal", "mixin", "PersistentProjectileEntityMixin.java"));
+		assertNotContains(projectileMixin, "setNoClip(true)", "penetration collision path");
+		assertNotContains(projectileMixin, "shouldPhaseThroughBlockingCollision", "penetration collision path");
 	}
 
 	private static String readRequired(Path path) throws IOException {

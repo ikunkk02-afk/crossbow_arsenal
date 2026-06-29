@@ -13,9 +13,14 @@ public final class PenetrationState {
 	private static final String INITIALIZED_KEY = "Initialized";
 	private static final String CAN_GLASS_KEY = "CanGlass";
 	private static final String CAN_FRAGILE_KEY = "CanFragile";
+	private static final String CAN_SOFT_KEY = "CanSoft";
+	private static final String CAN_WOODEN_KEY = "CanWooden";
 	private static final String GLASS_CONSUMES_KEY = "GlassConsumes";
 	private static final String MAX_FRAGILE_KEY = "MaxFragile";
 	private static final String MAX_ENTITIES_KEY = "MaxEntities";
+	private static final String CAN_OVERPOWERED_KEY = "CanOverpowered";
+	private static final String MAX_OVERPOWERED_KEY = "MaxOverpowered";
+	private static final String OVERPOWERED_COUNT_KEY = "OverpoweredCount";
 	private static final String BLOCK_COUNT_KEY = "BlockCount";
 	private static final String BUDGET_USED_KEY = "BudgetUsed";
 	private static final String ENTITY_COUNT_KEY = "EntityCount";
@@ -25,9 +30,14 @@ public final class PenetrationState {
 	private boolean initialized;
 	private boolean canPenetrateGlass;
 	private boolean canPenetrateFragile;
+	private boolean canPenetrateSoft;
+	private boolean canPenetrateWooden;
 	private boolean glassConsumesDurability;
 	private int maxFragileBlocks;
 	private int maxEntityPenetrations;
+	private boolean overpoweredPenetrationEnabled;
+	private int maxOverpoweredBlocks;
+	private int overpoweredBlockCount;
 	private int penetratedBlockCount;
 	private int penetrationBudgetUsed;
 	private int penetratedEntityCount;
@@ -35,12 +45,21 @@ public final class PenetrationState {
 	private final Set<UUID> hitEntityUuids = new LinkedHashSet<>();
 
 	public void initialize(boolean canGlass, boolean canFragile, boolean glassConsumes, int maxFragile, int maxEntities) {
+		initialize(canGlass, canFragile, false, false, glassConsumes, maxFragile, maxEntities);
+	}
+
+	public void initialize(boolean canGlass, boolean canFragile, boolean canSoft, boolean canWooden, boolean glassConsumes, int maxFragile, int maxEntities) {
 		initialized = true;
 		canPenetrateGlass = canGlass;
 		canPenetrateFragile = canFragile;
+		canPenetrateSoft = canSoft;
+		canPenetrateWooden = canWooden;
 		glassConsumesDurability = glassConsumes;
 		maxFragileBlocks = Math.max(0, maxFragile);
 		maxEntityPenetrations = Math.max(0, maxEntities);
+		overpoweredPenetrationEnabled = false;
+		maxOverpoweredBlocks = 0;
+		overpoweredBlockCount = 0;
 		penetratedBlockCount = 0;
 		penetrationBudgetUsed = 0;
 		penetratedEntityCount = 0;
@@ -60,8 +79,30 @@ public final class PenetrationState {
 		return canPenetrateFragile && hasFragileBudget();
 	}
 
+	public boolean canPenetrateSoft() {
+		return canPenetrateSoft && hasFragileBudget();
+	}
+
+	public boolean canPenetrateWooden() {
+		return canPenetrateWooden && hasFragileBudget();
+	}
+
 	public boolean isEntityPenetrationEnabled() {
 		return maxEntityPenetrations > 0;
+	}
+
+	public void initializeOverpowered(boolean enabled, int maxBlocks) {
+		overpoweredPenetrationEnabled = enabled;
+		maxOverpoweredBlocks = Math.max(0, maxBlocks);
+		overpoweredBlockCount = 0;
+	}
+
+	public boolean isOverpoweredPenetrationEnabled() {
+		return overpoweredPenetrationEnabled;
+	}
+
+	public boolean canPenetrateOverpowered() {
+		return overpoweredPenetrationEnabled && overpoweredBlockCount < maxOverpoweredBlocks;
 	}
 
 	public void recordBlockPenetration(boolean glass, double damageMultiplier) {
@@ -69,6 +110,12 @@ public final class PenetrationState {
 		if (!glass || glassConsumesDurability) {
 			penetrationBudgetUsed++;
 		}
+		currentDamageMultiplier *= clampMultiplier(damageMultiplier);
+	}
+
+	public void recordOverpoweredBlockPenetration(double damageMultiplier) {
+		penetratedBlockCount++;
+		overpoweredBlockCount++;
 		currentDamageMultiplier *= clampMultiplier(damageMultiplier);
 	}
 
@@ -102,6 +149,14 @@ public final class PenetrationState {
 		return penetratedEntityCount;
 	}
 
+	public int getOverpoweredBlockCount() {
+		return overpoweredBlockCount;
+	}
+
+	public int getMaxOverpoweredBlocks() {
+		return maxOverpoweredBlocks;
+	}
+
 	public int getMaxFragileBlocks() {
 		return maxFragileBlocks;
 	}
@@ -118,9 +173,14 @@ public final class PenetrationState {
 		nbt.putBoolean(INITIALIZED_KEY, initialized);
 		nbt.putBoolean(CAN_GLASS_KEY, canPenetrateGlass);
 		nbt.putBoolean(CAN_FRAGILE_KEY, canPenetrateFragile);
+		nbt.putBoolean(CAN_SOFT_KEY, canPenetrateSoft);
+		nbt.putBoolean(CAN_WOODEN_KEY, canPenetrateWooden);
 		nbt.putBoolean(GLASS_CONSUMES_KEY, glassConsumesDurability);
 		nbt.putInt(MAX_FRAGILE_KEY, maxFragileBlocks);
 		nbt.putInt(MAX_ENTITIES_KEY, maxEntityPenetrations);
+		nbt.putBoolean(CAN_OVERPOWERED_KEY, overpoweredPenetrationEnabled);
+		nbt.putInt(MAX_OVERPOWERED_KEY, maxOverpoweredBlocks);
+		nbt.putInt(OVERPOWERED_COUNT_KEY, overpoweredBlockCount);
 		nbt.putInt(BLOCK_COUNT_KEY, penetratedBlockCount);
 		nbt.putInt(BUDGET_USED_KEY, penetrationBudgetUsed);
 		nbt.putInt(ENTITY_COUNT_KEY, penetratedEntityCount);
@@ -136,9 +196,14 @@ public final class PenetrationState {
 		initialized = nbt.getBoolean(INITIALIZED_KEY);
 		canPenetrateGlass = nbt.getBoolean(CAN_GLASS_KEY);
 		canPenetrateFragile = nbt.getBoolean(CAN_FRAGILE_KEY);
+		canPenetrateSoft = nbt.getBoolean(CAN_SOFT_KEY);
+		canPenetrateWooden = nbt.getBoolean(CAN_WOODEN_KEY);
 		glassConsumesDurability = nbt.getBoolean(GLASS_CONSUMES_KEY);
 		maxFragileBlocks = Math.max(0, nbt.getInt(MAX_FRAGILE_KEY));
 		maxEntityPenetrations = Math.max(0, nbt.getInt(MAX_ENTITIES_KEY));
+		overpoweredPenetrationEnabled = nbt.getBoolean(CAN_OVERPOWERED_KEY);
+		maxOverpoweredBlocks = Math.max(0, nbt.getInt(MAX_OVERPOWERED_KEY));
+		overpoweredBlockCount = Math.max(0, nbt.getInt(OVERPOWERED_COUNT_KEY));
 		penetratedBlockCount = Math.max(0, nbt.getInt(BLOCK_COUNT_KEY));
 		penetrationBudgetUsed = Math.max(0, nbt.getInt(BUDGET_USED_KEY));
 		penetratedEntityCount = Math.max(0, nbt.getInt(ENTITY_COUNT_KEY));

@@ -5,11 +5,11 @@
 	"name": "crossbow_arsenal",
 	"description": "This is an example description! Tell everyone what your mod is about!",
 	"authors": [
-		"Me!"
+		"shaoyun"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://www.douyin.com/user/self?from_tab_name=main",
+		"sources": "https://github.com/ikunkk02-afk/crossbow_arsenal"
 	},
 	"license": "MIT",
 	"icon": "assets/crossbow_arsenal/icon.png",

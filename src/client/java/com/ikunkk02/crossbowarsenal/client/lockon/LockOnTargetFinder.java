@@ -2,6 +2,7 @@ package com.ikunkk02.crossbowarsenal.client.lockon;
 
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfig;
 import com.ikunkk02.crossbowarsenal.config.CrossbowArsenalConfigManager;
+import com.ikunkk02.crossbowarsenal.config.OverpoweredTargetingPolicy;
 import com.ikunkk02.crossbowarsenal.item.LockOnSightItemData;
 import com.ikunkk02.crossbowarsenal.util.LockOnTargeting;
 import net.minecraft.client.MinecraftClient;
@@ -21,15 +22,16 @@ public final class LockOnTargetFinder {
 		}
 
 		CrossbowArsenalConfig config = CrossbowArsenalConfigManager.getConfig();
+		OverpoweredTargetingPolicy policy = ClientTargetingPolicyState.getEffectivePolicy();
 		Vec3d eye = client.player.getEyePos();
-		double maxDistance = config.lockOnMaxDistance;
+		double maxDistance = policy.targetMaxDistance(config.lockOnMaxDistance);
 		Box searchBox = client.player.getBoundingBox().expand(maxDistance);
 		LivingEntity best = null;
 		Score bestScore = null;
 		float tickDelta = 1.0F;
 
 		for (Entity entity : client.world.getOtherEntities(client.player, searchBox, candidate -> candidate instanceof LivingEntity)) {
-			if (!(entity instanceof LivingEntity target) || !LockOnTargeting.isValidBaseTarget(client.player, target, maxDistance, config.requireLineOfSight)) {
+			if (!(entity instanceof LivingEntity target) || !LockOnTargeting.isValidBaseTarget(client.player, target, maxDistance, policy)) {
 				continue;
 			}
 

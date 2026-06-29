@@ -17,6 +17,10 @@ public final class ModEnchantments {
 			RegistryKeys.ENCHANTMENT,
 			Crossbow_arsenal.id("repeating")
 	);
+	public static final RegistryKey<Enchantment> EXPLOSIVE = RegistryKey.of(
+			RegistryKeys.ENCHANTMENT,
+			Crossbow_arsenal.id("explosive")
+	);
 
 	private ModEnchantments() {
 	}
@@ -27,6 +31,10 @@ public final class ModEnchantments {
 
 	public static int getRepeatingLevel(World world, ItemStack stack) {
 		return getLevel(world, stack, REPEATING);
+	}
+
+	public static int getExplosiveLevel(World world, ItemStack stack) {
+		return getLevel(world, stack, EXPLOSIVE);
 	}
 
 	public static int getLevel(World world, ItemStack stack, RegistryKey<Enchantment> key) {
